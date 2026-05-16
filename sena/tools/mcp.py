@@ -73,6 +73,7 @@ class MCPClient:
         command: str | None = None,
         args: list[str] | None = None,
         url: str | None = None,
+        env: dict[str, str] | None = None,
     ) -> None:
         """Configure the client.
 
@@ -81,11 +82,13 @@ class MCPClient:
             command: Executable for stdio transport.
             args: Arguments for stdio transport.
             url: Endpoint URL for SSE transport.
+            env: Environment variables for the MCP server process.
         """
         self.transport = transport
         self.command = command
         self.args = args or []
         self.url = url
+        self.env = env
         self._session: Any = None
         self._tools: list[ToolDefinition] = []
 
@@ -100,10 +103,16 @@ class MCPClient:
 
         try:
             if self.transport == "stdio":
+                # Ensure the subprocess inherits current env + custom env
+                import os
+                full_env = os.environ.copy()
+                if self.env:
+                    full_env.update(self.env)
+
                 params = StdioServerParameters(
                     command=self.command or "npx",
                     args=self.args,
-                    env=None,
+                    env=full_env,
                 )
                 self._transport_ctx = stdio_client(params)
             elif self.transport == "sse":
@@ -190,6 +199,10 @@ async def register_mcp_tools(registry: ToolRegistry, config: SenaConfig) -> list
     # and not already configured.
     if config.default_provider == "ollama" and "ollama-web-tools" not in config.mcp_servers:
         try:
+            mcp_env = {}
+            if config.ollama.api_key:
+                mcp_env["OLLAMA_API_KEY"] = config.ollama.api_key
+
             # This is a Python project. We use 'uv run' to run it directly from GitHub.
             client = MCPClient(
                 transport="stdio",
@@ -199,6 +212,7 @@ async def register_mcp_tools(registry: ToolRegistry, config: SenaConfig) -> list
                     "--with", "git+https://github.com/chakkritte/ollama-web-tools-mcp.git",
                     "python", "-m", "ollama_web_tools_mcp"
                 ],
+                env=mcp_env,
             )
             await client.connect()
             tools = await client.list_tools()
