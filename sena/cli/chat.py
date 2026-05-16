@@ -489,6 +489,8 @@ async def _chat_loop(
                     if slash_result.done:
                         console.print("[dim]Goodbye.[/dim]")
                         break
+                    renderer.print_status()
+                    console.print()
                     continue
 
                 # Shell escape shortcut
@@ -508,6 +510,8 @@ async def _chat_loop(
                                 name="shell",
                             )
                         )
+                        renderer.print_status()
+                        console.print()
                         continue
                     else:
                         console.print("[dim]Usage: !<command>[/dim]\n")
@@ -549,6 +553,8 @@ async def _chat_loop(
                             )
                 except Exception as e:
                     renderer.add_tool_result("error", str(e), is_error=True)
+                renderer.print_status()
+                console.print()
     finally:
         # Disconnect MCP clients
         for client in mcp_clients:
