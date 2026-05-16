@@ -35,22 +35,21 @@ class UpdateTopicTool(BaseTool):
         "required": ["strategic_intent"],
     }
 
-    async def execute(self, **kwargs: Any) -> ToolResult:
-        title = kwargs.get("title", "Update")
-        summary = kwargs.get("summary", "")
-        intent = kwargs["strategic_intent"]
-        
-        # In this implementation, we just print it to the console using a specific style
+    async def execute(self, arguments: dict[str, Any]) -> ToolResult:
+        title = arguments.get("title", "Update")
+        summary = arguments.get("summary", "")
+        intent = arguments.get("strategic_intent", "")
+
         from rich.console import Console
         from rich.panel import Panel
         from rich.text import Text
-        
+
         console = Console()
         content = Text()
         if summary:
             content.append(summary + "\n\n", style="dim")
         content.append(f"Intent: {intent}", style="bold cyan")
-        
+
         console.print(
             Panel(
                 content,
@@ -59,5 +58,5 @@ class UpdateTopicTool(BaseTool):
                 padding=(0, 1),
             )
         )
-        
+
         return ToolResult(tool_call_id="", name=self.name, content=f"Topic updated: {title}")

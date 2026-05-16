@@ -27,10 +27,8 @@ class EnterPlanModeTool(BaseTool):
         "required": ["reason"],
     }
 
-    async def execute(self, **kwargs: Any) -> ToolResult:
-        reason = kwargs["reason"]
-        # In a real CLI, this might change the UI state.
-        # For now, we return a instruction block that guides the agent.
+    async def execute(self, arguments: dict[str, Any]) -> ToolResult:
+        reason = arguments.get("reason", "")
         return ToolResult(
             tool_call_id="",
             name=self.name,

@@ -46,9 +46,9 @@ class InvokeAgentTool(BaseTool):
         self.tools = tools
         self.model = model
 
-    async def execute(self, **kwargs: Any) -> ToolResult:
-        agent_name = kwargs["agent_name"]
-        prompt = kwargs["prompt"]
+    async def execute(self, arguments: dict[str, Any]) -> ToolResult:
+        agent_name = arguments.get("agent_name", "")
+        prompt = arguments.get("prompt", "")
 
         from sena.agents.base import ReactAgent
         from sena.agents.coding import CodingAgent

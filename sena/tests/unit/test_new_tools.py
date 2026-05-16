@@ -60,7 +60,7 @@ class FakeMemory(BaseMemory):
 @pytest.mark.asyncio
 async def test_enter_plan_mode_functional() -> None:
     tool = EnterPlanModeTool()
-    result = await tool.execute(reason="Complex refactoring")
+    result = await tool.execute({"reason": "Complex refactoring"})
     assert "PLANNING MODE ENABLED" in result.content
     assert "Complex refactoring" in result.content
     assert result.name == "enter_plan_mode"
@@ -69,8 +69,7 @@ async def test_enter_plan_mode_functional() -> None:
 async def test_update_topic_functional() -> None:
     tool = UpdateTopicTool()
     result = await tool.execute(
-        title="Architecture",
-        strategic_intent="Define the core layers."
+        {"title": "Architecture", "strategic_intent": "Define the core layers."}
     )
     assert "Topic updated: Architecture" in result.content
     assert result.name == "update_topic"
@@ -83,7 +82,7 @@ async def test_activate_skill_functional(tmp_path: Path) -> None:
     (skills_dir / "security.md").write_text(skill_content, encoding="utf-8")
     
     tool = ActivateSkillTool(skills_dir=skills_dir)
-    result = await tool.execute(name="security")
+    result = await tool.execute({"name": "security"})
     assert "<activated_skill>" in result.content
     assert skill_content in result.content
 
@@ -96,7 +95,7 @@ async def test_invoke_agent_functional() -> None:
     tool = InvokeAgentTool(provider, memory, tools)
     
     # Test dispatch to 'generalist' which uses ReactAgent
-    result = await tool.execute(agent_name="generalist", prompt="Help me code.")
+    result = await tool.execute({"agent_name": "generalist", "prompt": "Help me code."})
     assert not result.is_error
     assert "Delegated response" in result.content
     assert result.name == "invoke_agent"
@@ -110,6 +109,6 @@ async def test_invoke_agent_invalid_functional() -> None:
     tool = InvokeAgentTool(provider, memory, tools)
     
     # Test invalid agent name
-    result = await tool.execute(agent_name="invalid_agent", prompt="Do something")
+    result = await tool.execute({"agent_name": "invalid_agent", "prompt": "Do something"})
     assert result.is_error
     assert "Agent 'invalid_agent' not found" in result.content

@@ -35,8 +35,8 @@ class ActivateSkillTool(BaseTool):
         self.skills_dir = skills_dir or Path(platformdirs.user_config_dir("sena")) / "skills"
         self.skills_dir.mkdir(parents=True, exist_ok=True)
 
-    async def execute(self, **kwargs: Any) -> ToolResult:
-        name = kwargs["name"]
+    async def execute(self, arguments: dict[str, Any]) -> ToolResult:
+        name = arguments.get("name", "")
         skill_file = self.skills_dir / f"{name}.md"
         
         # Also check in project root if it exists

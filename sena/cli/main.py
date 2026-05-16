@@ -60,18 +60,42 @@ async def cli_approval_callback(name: str, arguments: dict[str, Any]) -> bool:
     """Consolidated CLI approval callback for all tools."""
     from rich.panel import Panel
     from rich.prompt import Confirm
+    from rich.syntax import Syntax
     from rich.text import Text
     import json
 
-    args_json = json.dumps(arguments, indent=2)
-    console.print(
-        Panel(
-            Text(args_json, style="cyan"),
-            title=f"[bold yellow]Approve action: {name}?[/bold yellow]",
-            border_style="yellow",
-            padding=(0, 1),
+    if name == "file_patch":
+        path = arguments.get("path", "")
+        diff_text = arguments.get("diff", "")
+        console.print(
+            Panel(
+                Syntax(diff_text, "diff", theme="monokai", padding=0),
+                title=f"[bold yellow]Approve patch: {path}?[/bold yellow]",
+                border_style="yellow",
+                padding=(0, 1),
+            )
         )
-    )
+    elif name == "file_write":
+        path = arguments.get("path", "")
+        content = arguments.get("content", "")
+        console.print(
+            Panel(
+                Syntax(content, "python", theme="monokai", padding=0),
+                title=f"[bold yellow]Approve write: {path}?[/bold yellow]",
+                border_style="yellow",
+                padding=(0, 1),
+            )
+        )
+    else:
+        args_json = json.dumps(arguments, indent=2)
+        console.print(
+            Panel(
+                Text(args_json, style="cyan"),
+                title=f"[bold yellow]Approve action: {name}?[/bold yellow]",
+                border_style="yellow",
+                padding=(0, 1),
+            )
+        )
     return Confirm.ask("Proceed?")
 
 
