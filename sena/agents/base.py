@@ -77,18 +77,40 @@ class ReactAgent(BaseAgent):
 
     async def run(self, task: str, context: dict[str, Any] | None = None) -> str:
         from sena.telemetry.otel import trace_span
+        from sena.config.settings import SenaConfig
+
+        # Load dynamic context
+        config = SenaConfig()
+        persona_str = ""
+        if config.persona:
+            persona_str = "\n\nYOUR PERSONA AND PREFERENCES:\n" + "\n".join(
+                f"- {k.capitalize()}: {v}" for k, v in config.persona.items()
+            )
+
+        learned_rules = await self.memory.retrieve("", namespace="learned_rules", limit=50)
+        rules_str = ""
+        if learned_rules:
+            rules_str = "\n\nLEARNED RULES FROM PAST INTERACTIONS:\n" + "\n".join(
+                f"- {r.content}" for r in learned_rules
+            )
+
+        full_system_prompt = self.system_prompt + persona_str + rules_str
 
         with trace_span(f"agent.{self.name}.run", attributes={"task": task[:100]}):
             ctx = AgentContext(
                 provider=self.provider,
                 tools=ToolRegistry(),
                 memory=self.memory,
-                system_prompt=self.system_prompt,
+                system_prompt=full_system_prompt,
                 model=self.model,
                 max_iterations=self.max_iterations,
             )
             for t in self.tools:
                 ctx.tools.register(t)
+            
+            # Auto-register LearnRuleTool for all agents
+            from sena.agents.evolution import LearnRuleTool
+            ctx.tools.register(LearnRuleTool(self.memory))
 
             ctx.messages.append(Message(role="user", content=task))
 

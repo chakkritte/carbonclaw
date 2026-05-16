@@ -37,7 +37,8 @@ def test_trace_span_records_data(span_exporter: InMemorySpanExporter) -> None:
     spans = span_exporter.get_finished_spans()
     assert len(spans) == 1
     assert spans[0].name == "test.operation"
-    assert spans[0].attributes["key"] == "value"
+    attrs = spans[0].attributes or {}
+    assert attrs["key"] == "value"
 
 
 @pytest.mark.asyncio

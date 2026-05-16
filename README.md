@@ -388,22 +388,11 @@ uv run mypy sena
 - [x] Remote agent worker pools (`sena worker`)
 - [x] Browser automation tool (Playwright)
 - [x] OpenTelemetry observability integration
-- [ ] **Phase 3: Event-Driven CI/CD Workflows** (GitHub/GitLab webhooks)
-- [ ] **Phase 4: Advanced Graph Memory** (Knowledge Graph using NetworkX/Neo4j)
-- [ ] **Phase 5: IDE Integration** (Language Server Protocol - LSP)
-- [ ] **Phase 6: Multi-Modal Capabilities** (Vision & Voice support)
-
-## License
-
-MIT
-s and resume (`sena snapshot`)
-- [x] Web dashboard (`sena web`)
-- [x] Remote agent worker pools (`sena worker`)
-- [ ] Browser automation tool (Playwright)
-- [ ] OpenTelemetry observability integration
-- [ ] Event-driven CI/CD webhooks (GitHub/GitLab)
-- [ ] Knowledge Graph memory (NetworkX)
-- [ ] Language Server Protocol (LSP) for IDE integration
+- [x] **Phase 3: Persona Initialization & Self-Evolution** (`sena init`)
+- [ ] **Phase 4: Event-Driven CI/CD Workflows** (GitHub/GitLab webhooks)
+- [ ] **Phase 5: Advanced Graph Memory** (Knowledge Graph using NetworkX/Neo4j)
+- [ ] **Phase 6: IDE Integration** (Language Server Protocol - LSP)
+- [ ] **Phase 7: Multi-Modal Capabilities** (Vision & Voice support)
 
 ## License
 

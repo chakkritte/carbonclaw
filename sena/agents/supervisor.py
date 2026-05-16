@@ -161,9 +161,29 @@ class SupervisorAgent:
             logger.info("supervisor.code.complete", result_length=len(code_result))
 
             # Step 3: Review
+            review = ""
             if auto_review:
                 review = await self.delegate("review", f"Review the following changes:\n\n{code_result}")
                 logger.info("supervisor.review.complete", review_length=len(review))
+            
+            # Step 4: Self-Evolution (Reflection)
+            try:
+                from sena.agents.evolution import EvolutionAgent
+                evo = EvolutionAgent(self.provider, self.tools, self.memory, self.model)
+                # Combine messages for reflection
+                history = [
+                    Message(role="user", content=task),
+                    Message(role="assistant", content=f"Implementation: {code_result}"),
+                ]
+                if review:
+                    history.append(Message(role="assistant", content=f"Review: {review}"))
+                
+                await evo.reflect(history)
+                logger.info("supervisor.evolution.complete")
+            except Exception as e:
+                logger.warning("supervisor.evolution.failed", error=str(e))
+
+            if auto_review:
                 return f"## Plan\n{plan}\n\n## Implementation\n{code_result}\n\n## Review\n{review}"
 
             return f"## Plan\n{plan}\n\n## Implementation\n{code_result}"

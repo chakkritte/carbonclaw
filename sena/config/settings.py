@@ -8,11 +8,19 @@ from typing import Any
 
 import platformdirs
 import structlog
-from pydantic import Field
+from pydantic import Field, BaseModel
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
 
 logger = structlog.get_logger()
+
+
+class ProviderCredential(BaseModel):
+    """Credentials for a single provider."""
+
+    api_key: str | None = None
+    base_url: str | None = None
+    default_model: str | None = None
 
 
 class _ProjectSource(PydanticBaseSettingsSource):
@@ -72,12 +80,35 @@ class _UserSource(PydanticBaseSettingsSource):
             return {}
 
 
-class ProviderCredential(BaseSettings):
-    """Credentials for a single provider."""
+class _PersonaSource(PydanticBaseSettingsSource):
+    """Load agent persona from ~/.config/sena/persona.toml."""
 
-    api_key: str | None = None
-    base_url: str | None = None
-    default_model: str | None = None
+    def get_field_value(
+        self, field: "FieldInfo", field_name: str
+    ) -> tuple[Any, str, bool]:
+        if field_name != "persona":
+            return None, field_name, False
+
+        path = Path(platformdirs.user_config_dir("sena")) / "persona.toml"
+        if not path.exists():
+            return None, field_name, False
+        try:
+            with path.open("rb") as f:
+                data = tomllib.load(f)
+            return data.get("persona"), field_name, True
+        except Exception:
+            return None, field_name, False
+
+    def __call__(self) -> dict[str, Any]:
+        path = Path(platformdirs.user_config_dir("sena")) / "persona.toml"
+        if not path.exists():
+            return {}
+        try:
+            with path.open("rb") as f:
+                data = tomllib.load(f)
+                return {"persona": data.get("persona", {})}
+        except Exception:
+            return {}
 
 
 class SenaConfig(BaseSettings):
@@ -88,7 +119,8 @@ class SenaConfig(BaseSettings):
     2. Environment variables (SENA_*)
     3. Project config (pyproject.toml [tool.sena])
     4. User config (~/.config/sena/config.toml)
-    5. Defaults defined here
+    5. Persona config (~/.config/sena/persona.toml)
+    6. Defaults defined here
     """
 
     model_config = SettingsConfigDict(
@@ -102,6 +134,9 @@ class SenaConfig(BaseSettings):
     default_model: str = "llama3.2"
     temperature: float = 0.7
     max_tokens: int | None = None
+
+    # Persona
+    persona: dict[str, str] = Field(default_factory=dict)
 
     # Runtime policies
     auto_approve_safe_commands: bool = False
@@ -150,6 +185,7 @@ class SenaConfig(BaseSettings):
             env_settings,
             _ProjectSource(settings_cls),
             _UserSource(settings_cls),
+            _PersonaSource(settings_cls),
         )
 
     def get_provider_config(self, name: str) -> ProviderCredential:
