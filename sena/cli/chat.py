@@ -371,6 +371,30 @@ async def _chat_loop(
                 break
 
             stripped = user_input.strip()
+            
+            # Interactive slash command selection
+            if stripped == "/":
+                from rich.prompt import Prompt
+                from rich.console import Group
+                
+                cmds = slash._commands
+                unique_cmds = {}
+                for c in cmds.values():
+                    unique_cmds[c.name] = c
+                
+                options = sorted(unique_cmds.keys())
+                choices_str = ", ".join([f"[cyan]/{o}[/cyan]" for o in options])
+                console.print(f"[dim]Available commands:[/dim] {choices_str}")
+                
+                cmd_name = Prompt.ask(
+                    "Select command", 
+                    choices=options,
+                    show_choices=False
+                )
+                user_input = f"/{cmd_name}"
+                stripped = user_input
+                _print_user(user_input)
+
             if stripped.lower() in ("exit", "quit", "/exit", "/quit"):
                 console.print("[dim]Goodbye.[/dim]")
                 break

@@ -159,11 +159,33 @@ class SlashRegistry:
             "Switch agent mode (normal, plan, code, review, qa, docs).",
             _cmd_mode,
         )
+        self.register(
+            "init",
+            "Initialize a project-specific SENA.md file.",
+            _cmd_init,
+        )
 
 
 # ---------------------------------------------------------------------- #
 # Default handlers
 # ---------------------------------------------------------------------- #
+
+
+async def _cmd_init(_messages: list[Message], _args: str, _registry: SlashRegistry) -> SlashResult:
+    """Initialize a project-specific SENA.md file."""
+    from pathlib import Path
+    from rich.prompt import Confirm
+    from sena.cli.main import console
+
+    sena_md = Path("SENA.md")
+    content = "# Project Instructions\n\n- Add your project-specific conventions here.\n"
+
+    if sena_md.exists():
+        if not Confirm.ask("[yellow]SENA.md already exists. Overwrite?[/yellow]"):
+            return SlashResult(output="[dim]SENA.md creation skipped.[/dim]")
+    
+    sena_md.write_text(content, encoding="utf-8")
+    return SlashResult(output=f"[bold green]Successfully created {sena_md.absolute()}[/bold green]")
 
 
 async def _cmd_clear(messages: list[Message], _args: str, _registry: SlashRegistry) -> SlashResult:
