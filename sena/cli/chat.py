@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import readline
 from pathlib import Path
 from typing import Any
@@ -306,6 +307,22 @@ async def _chat_loop(
     system_prompt = _build_system_prompt(config)
     messages: list[Message] = [Message(role="system", content=system_prompt)]
 
+    # Load session history from memory
+    try:
+        # Retrieve last 20 messages (reverse chronological, so we reverse it back)
+        past_entries = await memory.retrieve("", namespace="session", limit=20)
+        for entry in reversed(past_entries):
+            try:
+                data = json.loads(entry.content)
+                messages.append(Message(role=data["role"], content=data["content"]))
+            except (json.JSONDecodeError, KeyError):
+                # Fallback for old simple text entries
+                messages.append(Message(role="user", content=entry.content))
+        if len(past_entries) > 0:
+            console.print(f"[dim]Loaded {len(past_entries)} messages from history.[/dim]\n")
+    except Exception:
+        pass
+
     try:
         while True:
             try:
@@ -363,7 +380,10 @@ async def _chat_loop(
 
             _print_user(stripped)
             messages.append(Message(role="user", content=user_input))
-            await memory.store(user_input, namespace="session")
+            await memory.store(
+                json.dumps({"role": "user", "content": user_input}),
+                namespace="session"
+            )
 
             # Auto-context compaction before LLM turn
             try:
@@ -372,12 +392,22 @@ async def _chat_loop(
                 pass  # Don't block chat if compaction fails
 
             try:
+                # We need to capture the assistant's response to store it
+                # The current _run_agent_turn appends directly to messages
+                start_idx = len(messages)
                 await _run_agent_turn(
                     messages, provider, tools, model, config, streaming=streaming
                 )
+                # Store all new assistant/tool messages
+                for i in range(start_idx, len(messages)):
+                    msg = messages[i]
+                    if msg.content:
+                        await memory.store(
+                            json.dumps({"role": msg.role, "content": msg.content}),
+                            namespace="session"
+                        )
             except Exception as e:
                 _print_tool("error", str(e), is_error=True)
-
             _print_status(model, messages)
             console.print()
     finally:

@@ -29,6 +29,12 @@ def init_persona() -> None:
 
     persona: dict[str, str] = {}
 
+    # 0. User Name
+    persona["user_name"] = Prompt.ask(
+        "0. [bold]Name[/bold]: What should Sena call you?",
+        default="User",
+    )
+
     # 1. Role
     persona["role"] = Prompt.ask(
         "1. [bold]Role[/bold]: What is the primary role of this agent?\n"
