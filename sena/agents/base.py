@@ -98,7 +98,8 @@ class ReactAgent(BaseAgent):
                 f"- {r.content}" for r in learned_rules
             )
 
-        full_system_prompt = self.system_prompt + persona_str + rules_str
+        system_base = self.system_prompt or ""
+        full_system_prompt = system_base + persona_str + rules_str
         if instruction_context:
             full_system_prompt += "\n\nWORKSPACE CONTEXT & INSTRUCTIONS:\n" + instruction_context
 
