@@ -171,21 +171,24 @@ class SlashRegistry:
 # ---------------------------------------------------------------------- #
 
 
-async def _cmd_init(_messages: list[Message], _args: str, _registry: SlashRegistry) -> SlashResult:
-    """Initialize a project-specific SENA.md file."""
-    from pathlib import Path
-    from rich.prompt import Confirm
-    from sena.cli.main import console
-
-    sena_md = Path("SENA.md")
-    content = "# Project Instructions\n\n- Add your project-specific conventions here.\n"
-
-    if sena_md.exists():
-        if not Confirm.ask("[yellow]SENA.md already exists. Overwrite?[/yellow]"):
-            return SlashResult(output="[dim]SENA.md creation skipped.[/dim]")
+async def _cmd_init(messages: list[Message], _args: str, _registry: SlashRegistry) -> SlashResult:
+    """Trigger an autonomous repository analysis to create SENA.md."""
+    prompt = (
+        "Perform a deep analysis of this repository. "
+        "1. List and read key files to understand the project structure and architecture.\n"
+        "2. Identify coding conventions, technologies used, and project goals.\n"
+        "3. Create a comprehensive SENA.md file in the root directory summarizing these findings.\n"
+        "The SENA.md should serve as the primary instruction manual for future AI engineering sessions."
+    )
     
-    sena_md.write_text(content, encoding="utf-8")
-    return SlashResult(output=f"[bold green]Successfully created {sena_md.absolute()}[/bold green]")
+    return SlashResult(
+        messages=messages + [Message(role="user", content=prompt)],
+        output=(
+            "[bold blue]Initialization started.[/bold blue]\n"
+            "Sena is now analyzing the repository to generate a project-specific [bold]SENA.md[/bold].\n"
+            "This may take a few moments as I explore the codebase..."
+        )
+    )
 
 
 async def _cmd_clear(messages: list[Message], _args: str, _registry: SlashRegistry) -> SlashResult:
