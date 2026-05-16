@@ -13,10 +13,11 @@ curl -fsSL https://raw.githubusercontent.com/chakkritte/sena/main/install.sh | b
 
 - **Multi-Agent Orchestration**: Automated plan -> code -> test -> review -> docs workflows.
 - **Self-Evolution**: Agents learn from interactions and autonomously improve their strategies.
+- **Claude Code-Style Chat**: Interactive chat with multi-line input, draft preservation, and persistent chat renderer.
 - **Browser Automation**: Full web interaction and scraping via Playwright.
 - **Strictly Typed**: 100% Mypy compliance for enterprise reliability.
 - **Observability**: Built-in OpenTelemetry tracing for monitoring execution paths and token costs.
-- **Human-in-the-Loop**: Mandatory approval gates for sensitive system operations.
+- **Human-in-the-Loop**: Mandatory approval gates for sensitive system operations, with colored diff previews.
 
 ## 🛠 Quick Start
 
@@ -24,7 +25,7 @@ curl -fsSL https://raw.githubusercontent.com/chakkritte/sena/main/install.sh | b
 # Initialize your custom agent persona
 sena init
 
-# Start an interactive chat (use !command for shell escape)
+# Start an interactive chat
 sena chat
 
 # Run a one-shot engineering task
@@ -34,15 +35,30 @@ sena run "Refactor sena/core/base.py to use Protocol instead of ABC"
 sena models
 ```
 
+## 💬 Chat Features
+
+The `sena chat` command provides a modern AI coding CLI experience:
+
+| Feature | How to Use |
+|---------|-----------|
+| **Multi-line input** | End a line with `\` or type ` ``` ` to start a code block |
+| **Draft preservation** | Press `Ctrl+C` while typing — draft is restored on next prompt |
+| **History search** | `/history <query>` or native `Ctrl+R` |
+| **Open editor** | `/editor` opens `$EDITOR` to compose long messages |
+| **Slash commands** | `/help`, `/clear`, `/undo`, `/redo`, `/mode`, `/compact`, `/export`, `/import` |
+| **Shell escape** | `!command` runs shell commands and injects results into the conversation |
+| **Approval gates** | Dangerous operations show colored diffs before asking `Proceed? [y/n]` |
+
 ## 📖 Documentation
 
-For detailed guides, architecture, and advanced usage, see [docs.md](./docs.md).
+For detailed guides, architecture, and advanced usage, see [CLAUDE.md](./CLAUDE.md).
 
 ## 📅 Roadmap
 
 - [x] Multi-agent (Plan/Code/Review/QA/Docs)
 - [x] Human-in-the-Loop & Self-Evolution
 - [x] Browser Automation & OpenTelemetry
+- [x] **Phase 1: Chat UX Foundation** (multi-line input, ChatRenderer, draft preservation, history search)
 - [ ] **Phase 4: Event-Driven CI/CD Workflows**
 - [ ] **Phase 5: Advanced Graph Memory**
 - [ ] **Phase 6: IDE Integration (LSP)**
