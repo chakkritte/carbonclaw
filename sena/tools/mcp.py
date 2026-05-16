@@ -8,8 +8,12 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+import structlog
+
 from sena.core.base import BaseTool
 from sena.core.models import ToolDefinition, ToolResult
+
+logger = structlog.get_logger()
 
 
 class MCPTool(BaseTool):
@@ -143,3 +147,56 @@ class MCPClient:
             self._session = None
         if hasattr(self, "_transport"):
             await self._transport.__aexit__(None, None, None)
+
+
+async def register_mcp_tools(registry: ToolRegistry, config: SenaConfig) -> list[MCPClient]:
+    """Discover and register MCP tools based on configuration.
+    
+    Returns:
+        list[MCPClient]: The list of connected clients (to be closed later).
+    """
+    clients: list[MCPClient] = []
+    
+    # 1. Register tools from config.mcp_servers
+    for name, server_config in config.mcp_servers.items():
+        try:
+            client = MCPClient(
+                transport=server_config.get("transport", "stdio"),
+                command=server_config.get("command"),
+                args=server_config.get("args"),
+                url=server_config.get("url"),
+            )
+            await client.connect()
+            tools = await client.list_tools()
+            for t in tools:
+                registry.register(MCPTool(client, t.name, t.description, t.parameters))
+            clients.append(client)
+            logger.info("mcp.registered", server=name, tools=len(tools))
+        except Exception as e:
+            logger.error("mcp.failed", server=name, error=str(e))
+
+    # 2. Automatically support chakkritte/ollama-web-tools-mcp if Ollama is set
+    # and not already configured.
+    if config.default_provider == "ollama" and "ollama-web-tools" not in config.mcp_servers:
+        try:
+            # We assume it's available via npx for now, as is standard for MCPs
+            client = MCPClient(
+                transport="stdio",
+                command="npx",
+                args=["-y", "ollama-web-tools-mcp"],
+            )
+            await client.connect()
+            tools = await client.list_tools()
+            for t in tools:
+                registry.register(MCPTool(client, t.name, t.description, t.parameters))
+            clients.append(client)
+            logger.info("mcp.auto_registered", server="ollama-web-tools")
+        except Exception as e:
+            # Silently fail if npx/mcp server is not available
+            logger.debug("mcp.auto_failed", server="ollama-web-tools", error=str(e))
+
+    return clients
+
+
+from sena.config.settings import SenaConfig
+from sena.tools.base import ToolRegistry

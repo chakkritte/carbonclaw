@@ -26,6 +26,7 @@ from sena.tools.browser import BrowserTool
 from sena.tools.file import FilePatchTool, FileReadTool, FileWriteTool
 from sena.tools.git import GitTool
 from sena.tools.github_cli import GitHubTool
+from sena.tools.mcp import register_mcp_tools
 from sena.tools.python_interpreter import PythonTool
 from sena.tools.search import FileSearchTool
 from sena.tools.shell import ShellTool
@@ -283,6 +284,10 @@ async def _chat_loop(
     tools.register(GitHubTool())
     tools.register(FileSearchTool())
     tools.register(WebSearchTool())
+    
+    # Register MCP tools
+    mcp_clients = asyncio.run(register_mcp_tools(tools, config))
+    
     slash = SlashRegistry()
     ctx_mgr = ContextManager(provider, model=model)
 
@@ -301,76 +306,81 @@ async def _chat_loop(
     system_prompt = _build_system_prompt(config)
     messages: list[Message] = [Message(role="system", content=system_prompt)]
 
-    while True:
-        try:
-            user_input = console.input("[bold blue]> [/bold blue]")
-        except (EOFError, KeyboardInterrupt):
-            console.print("\n[dim]Goodbye.[/dim]")
-            break
-
-        stripped = user_input.strip()
-        if stripped.lower() in ("exit", "quit", "/exit", "/quit"):
-            console.print("[dim]Goodbye.[/dim]")
+    try:
+        while True:
             try:
-                readline.write_history_file(str(history_path))
-            except OSError:
-                pass
-            break
-
-        if not stripped:
-            continue
-
-        # Dispatch slash commands before sending to the LLM
-        slash_result = slash.dispatch(messages, stripped)
-        if slash_result is not None:
-            if slash_result.messages is not None:
-                messages = slash_result.messages
-            if slash_result.output:
-                console.print(slash_result.output)
-            if slash_result.done:
-                console.print("[dim]Goodbye.[/dim]")
+                user_input = console.input("[bold blue]> [/bold blue]")
+            except (EOFError, KeyboardInterrupt):
+                console.print("\n[dim]Goodbye.[/dim]")
                 break
-            # After a slash command, skip the LLM turn and print status
-            _print_status(model, messages)
-            console.print()
-            continue
 
-        # Shell escape shortcut
-        if stripped.startswith("!"):
-            cmd = stripped[1:].strip()
-            if cmd:
-                _print_shell_escape(stripped)
-                result = await tools.execute("shell", {"command": cmd})
-                _print_tool("shell", result.content, is_error=result.is_error)
-                # Add to history so agent can see it if next message refers to it
-                messages.append(Message(role="user", content=stripped))
-                messages.append(Message(role="tool", content=result.content, tool_call_id="shell_escape", name="shell"))
+            stripped = user_input.strip()
+            if stripped.lower() in ("exit", "quit", "/exit", "/quit"):
+                console.print("[dim]Goodbye.[/dim]")
+                try:
+                    readline.write_history_file(str(history_path))
+                except OSError:
+                    pass
+                break
+
+            if not stripped:
+                continue
+
+            # Dispatch slash commands before sending to the LLM
+            slash_result = slash.dispatch(messages, stripped)
+            if slash_result is not None:
+                if slash_result.messages is not None:
+                    messages = slash_result.messages
+                if slash_result.output:
+                    console.print(slash_result.output)
+                if slash_result.done:
+                    console.print("[dim]Goodbye.[/dim]")
+                    break
+                # After a slash command, skip the LLM turn and print status
                 _print_status(model, messages)
                 console.print()
                 continue
-            else:
-                console.print("[dim]Usage: !<command>[/dim]\n")
-                continue
 
-        _print_user(stripped)
-        messages.append(Message(role="user", content=user_input))
-        await memory.store(user_input, namespace="session")
+            # Shell escape shortcut
+            if stripped.startswith("!"):
+                cmd = stripped[1:].strip()
+                if cmd:
+                    _print_shell_escape(stripped)
+                    result = await tools.execute("shell", {"command": cmd})
+                    _print_tool("shell", result.content, is_error=result.is_error)
+                    # Add to history so agent can see it if next message refers to it
+                    messages.append(Message(role="user", content=stripped))
+                    messages.append(Message(role="tool", content=result.content, tool_call_id="shell_escape", name="shell"))
+                    _print_status(model, messages)
+                    console.print()
+                    continue
+                else:
+                    console.print("[dim]Usage: !<command>[/dim]\n")
+                    continue
 
-        # Auto-context compaction before LLM turn
-        try:
-            messages = await ctx_mgr.prepare(messages, tools=tools.definitions())
-        except Exception:
-            pass  # Don't block chat if compaction fails
+            _print_user(stripped)
+            messages.append(Message(role="user", content=user_input))
+            await memory.store(user_input, namespace="session")
 
-        try:
-            await _run_agent_turn(
-                messages, provider, tools, model, config, streaming=streaming
-            )
-        except Exception as e:
-            _print_tool("error", str(e), is_error=True)
+            # Auto-context compaction before LLM turn
+            try:
+                messages = await ctx_mgr.prepare(messages, tools=tools.definitions())
+            except Exception:
+                pass  # Don't block chat if compaction fails
 
-        _print_status(model, messages)
-        console.print()
+            try:
+                await _run_agent_turn(
+                    messages, provider, tools, model, config, streaming=streaming
+                )
+            except Exception as e:
+                _print_tool("error", str(e), is_error=True)
+
+            _print_status(model, messages)
+            console.print()
+    finally:
+        # Disconnect MCP clients
+        for client in mcp_clients:
+            asyncio.run(client.disconnect())
 
 
 @app.command()

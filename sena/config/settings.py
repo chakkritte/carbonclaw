@@ -163,6 +163,9 @@ class SenaConfig(BaseSettings):
     memory_path: str | None = None
     vector_backend: str | None = None
 
+    # MCP
+    mcp_servers: dict[str, dict[str, Any]] = Field(default_factory=dict)
+
     # Providers (nested)
     openai: ProviderCredential = Field(default_factory=ProviderCredential)
     anthropic: ProviderCredential = Field(default_factory=ProviderCredential)
