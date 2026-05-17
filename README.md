@@ -30,17 +30,14 @@ curl -fsSL https://raw.githubusercontent.com/chakkritte/carbonclaw/main/install.
 ## 🛠 Quick Start
 
 ```bash
-# Initialize your custom agent persona
-carbonclaw init
+# Run the interactive setup wizard (Configure providers, keys, and persona)
+carbonclaw setup
 
 # Start an interactive chat
 carbonclaw chat
 
 # Run a one-shot engineering task
 carbonclaw run "Refactor carbonclaw/core/base.py to use Protocol instead of ABC"
-
-# Setup your preferred model/provider
-carbonclaw models
 ```
 
 ## 💬 Chat Features

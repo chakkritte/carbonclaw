@@ -8,14 +8,22 @@ from carbonclaw.cli.main import app, console
 from carbonclaw.config.settings import CarbonClawConfig
 
 
-@app.command()
-def config(
+@app.command(name="config")
+def config_cmd(
     key: str | None = typer.Argument(None, help="Config key to get/set."),
     value: str | None = typer.Argument(None, help="Value to set (omit to get)."),
     init: bool = typer.Option(False, "--init", help="Create default user config file."),
+    setup: bool = typer.Option(False, "--setup", help="Run the interactive configuration wizard."),
 ) -> None:
-    """Get or set CarbonClaw configuration."""
+    """Get, set, or run setup wizard for CarbonClaw configuration."""
+    from carbonclaw.cli.init import init_carbonclaw
+
+    if setup:
+        init_carbonclaw()
+        return
+
     cfg = CarbonClawConfig()
+...
 
     if init:
         user_dir = cfg.ensure_user_dir()

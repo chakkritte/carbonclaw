@@ -16,118 +16,101 @@ from carbonclaw.cli.main import app
 console = Console()
 
 
+@app.command(name="setup")
+def setup_carbonclaw() -> None:
+    """Alias for 'init' - Run the CarbonClaw setup wizard."""
+    init_carbonclaw()
+
+
 @app.command(name="init")
-def init_persona() -> None:
-    """Initialize a custom agent persona via an interactive wizard."""
+def init_carbonclaw() -> None:
+    """Run the CarbonClaw setup wizard to configure providers, persona, and project settings."""
     console.print(
-        Panel.fit(
-            "[bold blue]CarbonClaw Persona Initialization[/bold blue]\n"
-            "Answer 10 questions to help CarbonClaw understand your preferences.",
-            border_style="blue",
+        Panel(
+            "[bold green]🤖 Welcome to CarbonClaw Setup[/bold green]\n"
+            "This wizard will help you configure your AI environment, "
+            "sustainability preferences, and agent persona.",
+            border_style="green",
         )
     )
 
-    persona: dict[str, str] = {}
-
-    # 0. User Name
-    persona["user_name"] = Prompt.ask(
-        "0. [bold]Name[/bold]: What should CarbonClaw call you?",
-        default="User",
-    )
-
-    # 1. Role
-    persona["role"] = Prompt.ask(
-        "1. [bold]Role[/bold]: What is the primary role of this agent?\n"
-        "(e.g., Senior Fullstack Engineer, Data Scientist, Security Researcher)",
-        default="Senior Software Engineer",
-    )
-
-    # 2. Tone
-    persona["tone"] = Prompt.ask(
-        "2. [bold]Tone[/bold]: What is the preferred communication style?\n"
-        "(e.g., Concise and technical, Tutorial-like and verbose, Friendly but professional)",
-        default="Concise and technical",
-    )
-
-    # 3. Formatting
-    persona["formatting"] = Prompt.ask(
-        "3. [bold]Formatting[/bold]: What are the strict code formatting/linting rules?\n"
-        "(e.g., PEP8, Airbnb Style Guide, Use 2-space indentation)",
-        default="Modern Python standards (Black, Ruff)",
-    )
-
-    # 4. TDD
-    persona["tdd"] = Prompt.ask(
-        "4. [bold]TDD[/bold]: How should the agent approach testing?\n"
-        "(e.g., Write tests before code, Parallel tests, Integration focus)",
-        default="Write unit tests for every logic change",
-    )
-
-    # 5. Error Handling
-    persona["error_handling"] = Prompt.ask(
-        "5. [bold]Error Handling[/bold]: What is the preferred strategy for exceptions?\n"
-        "(e.g., Fail fast, Exhaustive logging, Automatic retries)",
-        default="Exhaustive logging and fail-fast for clarity",
-    )
-
-    # 6. Autonomy
-    persona["autonomy"] = Prompt.ask(
-        "6. [bold]Autonomy[/bold]: How aggressively should it use tools without asking?\n"
-        "(e.g., Always ask, Ask for destructive actions, Fully autonomous)",
-        default="Ask for destructive actions",
-    )
-
-    # 7. Prioritization
-    persona["prioritization"] = Prompt.ask(
-        "7. [bold]Prioritization[/bold]: Optimize for speed, readability, or robustness?\n",
-        choices=["speed", "readability", "robustness"],
-        default="readability",
-    )
-
-    # 8. Expertise
-    persona["expertise"] = Prompt.ask(
-        "8. [bold]Expertise[/bold]: Primary languages/frameworks it should consider itself an expert in?\n",
-        default="Python, FastAPI, React, TypeScript",
-    )
-
-    # 9. Feedback Reception
-    persona["feedback_reception"] = Prompt.ask(
-        "9. [bold]Feedback Reception[/bold]: How should it react to being corrected?\n"
-        "(e.g., Apologize and update rules, Debate the correction, Silently update)",
-        default="Update learned rules and acknowledge immediately",
-    )
-
-    # 10. Goal
-    persona["goal"] = Prompt.ask(
-        "10. [bold]Goal[/bold]: What is the ultimate metric of success for this agent?\n"
-        "(e.g., Pass all tests, 100% type coverage, Most readable code)",
-        default="Functional, tested, and maintainable code",
-    )
-
-    # Save to ~/.config/carbonclaw/persona.toml
-    from carbonclaw.config.settings import CarbonClawConfig
-    import os
-
-    config_dir = Path(typer.get_app_dir("carbonclaw"))
-    config_dir.mkdir(parents=True, exist_ok=True)
+    config_dir = CarbonClawConfig.ensure_user_dir()
+    config_path = config_dir / "config.toml"
     persona_path = config_dir / "persona.toml"
 
-    import tomli_w
-    with open(persona_path, "wb") as f:
-        tomli_w.dump({"persona": persona}, f)
-
-    console.print(f"\n[green]Success![/green] Persona saved to [bold]{persona_path}[/bold]")
+    # --- 1. Core Configuration ---
+    console.print("\n[bold cyan]1. Core Configuration[/bold cyan]")
     
-    if Confirm.ask("\nWould you like to create a project-specific [bold]CARBONCLAW.md[/bold] in the current directory?"):
-        carbonclaw_md = Path("CARBONCLAW.md")
-        if carbonclaw_md.exists():
-            if not Confirm.ask("CARBONCLAW.md already exists. Overwrite?"):
-                console.print("[yellow]Skipped CARBONCLAW.md creation.[/yellow]")
-            else:
-                carbonclaw_md.write_text("# Project Instructions\n\n- Add your project-specific conventions here.\n", encoding="utf-8")
-                console.print("[green]CARBONCLAW.md updated.[/green]")
-        else:
-            carbonclaw_md.write_text("# Project Instructions\n\n- Add your project-specific conventions here.\n", encoding="utf-8")
-            console.print("[green]CARBONCLAW.md created.[/green]")
+    provider = Prompt.ask(
+        "Default LLM Provider",
+        choices=["ollama", "openai", "anthropic", "gemini", "deepseek", "openrouter"],
+        default="ollama",
+    )
+    
+    config_data: dict[str, Any] = {
+        "default_provider": provider,
+    }
 
-    console.print("CarbonClaw will now use this persona and context for all future interactions.")
+    if provider != "ollama":
+        api_key = Prompt.ask(f"Enter your {provider.upper()} API Key", password=True)
+        if api_key:
+            # We'll store it in the provider-specific block
+            config_data[provider] = {"api_key": api_key}
+    else:
+        base_url = Prompt.ask("Ollama Base URL", default="http://localhost:11434")
+        config_data["ollama"] = {"base_url": base_url}
+
+    config_data["default_model"] = Prompt.ask(
+        "Default Model ID",
+        default="llama3.2" if provider == "ollama" else "gpt-4o-mini",
+    )
+
+    # --- 2. Sustainability & Runtime ---
+    console.print("\n[bold cyan]2. Sustainability & Runtime[/bold cyan]")
+    
+    config_data["carbon_tracking_enabled"] = Confirm.ask(
+        "Enable real-time Carbon Emission tracking?", default=True
+    )
+    
+    config_data["auto_approve_safe_commands"] = Confirm.ask(
+        "Auto-approve safe shell commands (ls, git status, etc.)?", default=False
+    )
+
+    # --- 3. Persona ---
+    console.print("\n[bold cyan]3. Agent Persona[/bold cyan]")
+    if Confirm.ask("Would you like to customize your agent's persona now?", default=True):
+        persona: dict[str, str] = {}
+        persona["user_name"] = Prompt.ask("What should CarbonClaw call you?", default="User")
+        persona["role"] = Prompt.ask("Agent primary role", default="Senior Software Engineer")
+        persona["tone"] = Prompt.ask("Preferred tone", default="Concise and technical")
+        
+        import tomli_w
+        with open(persona_path, "wb") as f:
+            tomli_w.dump({"persona": persona}, f)
+        console.print(f"[dim]Persona saved to {persona_path}[/dim]")
+
+    # Save Config
+    import tomli_w
+    with open(config_path, "wb") as f:
+        tomli_w.dump(config_data, f)
+    
+    console.print(f"\n[green]✔ Configuration saved to [bold]{config_path}[/bold][/green]")
+
+    # --- 4. Project Setup ---
+    console.print("\n[bold cyan]4. Project Context[/bold cyan]")
+    if (Path.cwd() / ".git").exists():
+        if Confirm.ask("Current directory is a Git repo. Create CARBONCLAW.md for project-specific instructions?", default=True):
+            cc_md = Path("CARBONCLAW.md")
+            if not cc_md.exists() or Confirm.ask("CARBONCLAW.md exists. Overwrite?"):
+                cc_md.write_text(
+                    "# Project Context\n\n"
+                    "## Tech Stack\n- [Add languages/frameworks here]\n\n"
+                    "## Instructions\n- [Add project-specific rules here]\n",
+                    encoding="utf-8"
+                )
+                console.print("[green]✔ CARBONCLAW.md created.[/green]")
+
+    console.print(
+        "\n[bold green]Setup Complete![/bold green] "
+        "Run [bold]carbonclaw chat[/bold] to begin your first session. 🚀\n"
+    )
