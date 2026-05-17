@@ -31,12 +31,34 @@ def _find_carbonclaw_repo() -> Path | None:
 
 @app.command(name="update")
 def update_carbonclaw() -> None:
-    """Update CarbonClaw to the latest version from GitHub."""
+    """Update CarbonClaw to the latest version."""
     console.print(
-        Panel("🚀 [bold blue]Starting CarbonClaw Auto-Update[/bold blue]", border_style="blue")
+        Panel("🚀 [bold blue]Starting CarbonClaw Update[/bold blue]", border_style="blue")
     )
 
-    # 1. Try to auto-discover CarbonClaw repo; fall back to current directory
+    # 1. Check if installed as a 'uv tool'
+    try:
+        tool_list = subprocess.check_output(["uv", "tool", "list"], text=True)
+        if "carbonclaw" in tool_list:
+            console.print("🌍 Detected global 'uv tool' installation.")
+            console.print("Upgrading via [bold]uv tool upgrade[/bold]...")
+            # We try to upgrade from the original git source if possible, or just upgrade existing
+            try:
+                subprocess.check_call(["uv", "tool", "upgrade", "carbonclaw"])
+                console.print(
+                    Panel(
+                        "[green]✔ Update successful![/green]\n"
+                        "CarbonClaw tool has been upgraded.",
+                        border_style="green",
+                    )
+                )
+                return
+            except subprocess.CalledProcessError:
+                console.print("[yellow]uv tool upgrade failed. Falling back to source update...[/yellow]")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+
+    # 2. Source-based update (Git)
     repo = _find_carbonclaw_repo()
     cwd = Path.cwd()
     if repo is None and (cwd / ".git").exists():
@@ -44,8 +66,9 @@ def update_carbonclaw() -> None:
 
     if repo is None:
         console.print(
-            "[red]Error:[/red] Could not find CarbonClaw git repository. "
-            "Please run `carbonclaw update` from the CarbonClaw project directory."
+            "[red]Error:[/red] Could not find CarbonClaw git repository.\n"
+            "If you installed via git, please run this command from the repository folder.\n"
+            "If you want to install/update globally, run: [bold]uv tool install git+https://github.com/chakkritte/carbonclaw.git --force[/bold]"
         )
         raise typer.Exit(1)
 
