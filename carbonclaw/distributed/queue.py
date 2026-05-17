@@ -26,6 +26,15 @@ class TaskStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+class TaskType(str, Enum):
+    """Categories of tasks for specialized model routing."""
+
+    CODING = "coding"
+    RESEARCH = "research"
+    SLIDES = "slides"
+    GENERAL = "general"
+
+
 @dataclass
 class Task:
     """A unit of work in the distributed queue."""

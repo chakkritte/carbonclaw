@@ -55,6 +55,7 @@ def trace_span(
     name: str,
     attributes: dict[str, Any] | None = None,
     kind: trace.SpanKind = trace.SpanKind.INTERNAL,
+    task_type: str | None = None,
 ) -> Iterator[trace.Span]:
     """Context manager for creating a span with automated standard attributes."""
     tracer = get_tracer()
@@ -62,6 +63,8 @@ def trace_span(
     attrs = attributes or {}
     if "project" not in attrs:
         attrs["project"] = os.path.basename(os.getcwd())
+    if task_type:
+        attrs["task.type"] = task_type
         
     with tracer.start_as_current_span(name, kind=kind, attributes=attrs) as span:
         yield span

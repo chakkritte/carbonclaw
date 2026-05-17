@@ -14,9 +14,11 @@ from typing import Any, TYPE_CHECKING
 
 import structlog
 
+from carbonclaw.routing.classifier import classify_task
+from carbonclaw.core.models import Message, TaskType
+
 if TYPE_CHECKING:
     from carbonclaw.config.settings import CarbonClawConfig
-    from carbonclaw.core.models import Message
 
 logger = structlog.get_logger(__name__)
 
@@ -44,7 +46,7 @@ class ProviderStats:
 
 
 class SmartRouter:
-    """Routes tasks to the most appropriate provider/model."""
+    """Routes tasks to the most appropriate provider/model based on type and metrics."""
 
     def __init__(self, config: CarbonClawConfig):
         self.config = config
@@ -87,11 +89,6 @@ class SmartRouter:
     def calculate_complexity(self, task: str, messages: list[Message] | None = None) -> float:
         """
         Estimate task complexity (0.0 to 1.0).
-        
-        Factors:
-        - Message length
-        - Keywords (refactor, architect, complex, etc.)
-        - History depth
         """
         score = 0.2  # Base
         
@@ -108,7 +105,7 @@ class SmartRouter:
         # Keyword factor
         complex_keywords = ["refactor", "architect", "optimize", "debug", "deep", "analyze"]
         if any(kw in task.lower() for kw in complex_keywords):
-            score += 0.3
+            score += 0.5
             
         return min(1.0, score)
 
@@ -117,32 +114,36 @@ class SmartRouter:
         task: str, 
         messages: list[Message] | None = None,
         strategy: RoutingStrategy = RoutingStrategy.SUSTAINABILITY
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str, TaskType]:
         """
-        Decide which (provider, model) to use.
-        
-        Returns:
-            Tuple of (provider_name, model_id)
+        Decide which (provider, model, task_type) to use.
         """
+        task_type = classify_task(task)
         complexity = self.calculate_complexity(task, messages)
         
         # Filter healthy providers
         available = [s for s in self.stats.values() if s.is_healthy]
         if not available:
-            # Fallback to default config if everything is "unhealthy"
-            return self.config.default_provider, self.config.default_model or "llama3.2"
+            return self.config.default_provider, self.config.default_model or "llama3.2", task_type
 
-        # SUSTAINABILITY Strategy:
-        # If complexity is low (< 0.5), FORCE local model (Ollama)
+        # Determine the target model for this task type from config
+        task_model = self.config.routing_models.get(task_type.value)
+
+        # 1. SUSTAINABILITY Strategy:
         if strategy == RoutingStrategy.SUSTAINABILITY:
-            if complexity < 0.5 and "ollama" in self.stats and self.stats["ollama"].is_healthy:
-                return "ollama", self.config.default_model or "llama3.2"
+            # If complexity is high, pick cloud to ensure quality
+            if complexity >= 0.7:
+                 return self.config.default_provider, self.config.default_model or "gpt-4o", task_type
             
-            # For complex tasks, pick based on configuration preference but prefer high-quality
-            # Here we might pick Anthropic or OpenAI
-            return self.config.default_provider, self.config.default_model or "gpt-4o"
+            # Prefer local for simple/medium tasks
+            if "ollama" in self.stats and self.stats["ollama"].is_healthy:
+                model = task_model or self.config.default_model or "llama3.2"
+                return "ollama", model, task_type
+            
+            # Fallback to cloud if Ollama unhealthy
+            return self.config.default_provider, self.config.default_model or "gpt-4o", task_type
 
-        # BALANCED Strategy: Similar to OpenClaude scoring
+        # 2. BALANCED Strategy: Similar to OpenClaude scoring
         def get_score(s: ProviderStats) -> float:
             latency_factor = s.avg_latency_ms / 1000.0
             # Carbon/Cost factor: local = 0, cloud = 1.0
@@ -154,12 +155,13 @@ class SmartRouter:
         best_provider = min(available, key=get_score)
         
         # Model selection within provider
-        model = self.config.default_model or "llama3.2"
-        if not best_provider.is_local and complexity > 0.6:
-            # Switch to 'pro' model for complex cloud tasks
+        model = task_model or self.config.default_model or "llama3.2"
+        
+        # If cloud and very complex, switch to 'pro' model
+        if not best_provider.is_local and complexity > 0.8:
             if best_provider.name == "anthropic":
                 model = "claude-3-5-sonnet-latest"
             elif best_provider.name == "openai":
                 model = "gpt-4o"
         
-        return best_provider.name, model
+        return best_provider.name, model, task_type

@@ -173,10 +173,12 @@ class ReactAgent(BaseAgent):
                                     current_tool["arguments"] += tc.arguments_delta
                             elif tc.is_end:
                                 if current_tool is not None:
-                                    try:
-                                        args = json.loads(current_tool["arguments"])
-                                    except json.JSONDecodeError:
-                                        args = {}
+                                    from carbonclaw.utils.json_repair import repair_json
+                                    args = await repair_json(
+                                        current_tool["arguments"],
+                                        provider=self.provider,
+                                        model=self.model or ctx.model
+                                    )
                                     tool_calls.append(
                                         ToolCall(
                                             id=current_tool["id"],
@@ -190,10 +192,12 @@ class ReactAgent(BaseAgent):
 
                     # Handle any dangling tool call
                     if current_tool is not None:
-                        try:
-                            args = json.loads(current_tool["arguments"])
-                        except json.JSONDecodeError:
-                            args = {}
+                        from carbonclaw.utils.json_repair import repair_json
+                        args = await repair_json(
+                            current_tool["arguments"],
+                            provider=self.provider,
+                            model=self.model or ctx.model
+                        )
                         tool_calls.append(
                             ToolCall(
                                 id=current_tool["id"],
@@ -303,10 +307,12 @@ class ReactAgent(BaseAgent):
                                 current_tool["arguments"] += tc.arguments_delta
                         elif tc.is_end:
                             if current_tool is not None:
-                                try:
-                                    args = json.loads(current_tool["arguments"])
-                                except json.JSONDecodeError:
-                                    args = {}
+                                from carbonclaw.utils.json_repair import repair_json
+                                args = await repair_json(
+                                    current_tool["arguments"],
+                                    provider=self.provider,
+                                    model=self.model or ctx.model
+                                )
                                 tool_calls.append(
                                     ToolCall(
                                         id=current_tool["id"],
@@ -319,10 +325,12 @@ class ReactAgent(BaseAgent):
                         finish_reason = chunk.finish_reason
 
                 if current_tool is not None:
-                    try:
-                        args = json.loads(current_tool["arguments"])
-                    except json.JSONDecodeError:
-                        args = {}
+                    from carbonclaw.utils.json_repair import repair_json
+                    args = await repair_json(
+                        current_tool["arguments"],
+                        provider=self.provider,
+                        model=self.model or ctx.model
+                    )
                     tool_calls.append(
                         ToolCall(
                             id=current_tool["id"],

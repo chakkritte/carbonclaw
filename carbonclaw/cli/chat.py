@@ -262,10 +262,12 @@ async def _run_agent_turn(
                                     current_tool["arguments"] += tc.arguments_delta
                             elif tc.is_end:
                                 if current_tool is not None:
-                                    try:
-                                        args = json.loads(current_tool["arguments"])
-                                    except json.JSONDecodeError:
-                                        args = {}
+                                    from carbonclaw.utils.json_repair import repair_json
+                                    args = await repair_json(
+                                        current_tool["arguments"],
+                                        provider=provider,
+                                        model=model
+                                    )
                                     tool_calls.append(
                                         ToolCall(
                                             id=current_tool["id"],
@@ -293,10 +295,12 @@ async def _run_agent_turn(
                                     if current_tool is not None:
                                         current_tool["arguments"] += tc.arguments_delta
                                 elif tc.is_end and current_tool is not None:
-                                    try:
-                                        args = json.loads(current_tool["arguments"])
-                                    except json.JSONDecodeError:
-                                        args = {}
+                                    from carbonclaw.utils.json_repair import repair_json
+                                    args = await repair_json(
+                                        current_tool["arguments"],
+                                        provider=provider,
+                                        model=model
+                                    )
                                     tool_calls.append(
                                         ToolCall(
                                             id=current_tool["id"],
@@ -314,10 +318,12 @@ async def _run_agent_turn(
                     tool_calls = msg.tool_calls
 
             if current_tool is not None:
-                try:
-                    args = json.loads(current_tool["arguments"])
-                except json.JSONDecodeError:
-                    args = {}
+                from carbonclaw.utils.json_repair import repair_json
+                args = await repair_json(
+                    current_tool["arguments"],
+                    provider=provider,
+                    model=model
+                )
                 tool_calls.append(
                     ToolCall(
                         id=current_tool["id"],
@@ -544,16 +550,19 @@ async def _chat_loop(
                 except ValueError:
                     strat = RoutingStrategy.SUSTAINABILITY
                 
-                p_name, m_id = router.route(user_input, messages[:-1], strategy=strat)
+                p_name, m_id, t_type = router.route(user_input, messages[:-1], strategy=strat)
                 
                 curr_p_name = active_provider.__class__.__name__.lower().replace("provider", "")
-                if p_name != curr_p_name:
+                if p_name != curr_p_name or m_id != active_model:
                     try:
                         active_provider = ProviderRegistry.create(p_name, config)
                         active_model = m_id
-                        console.print(f"[dim]⚡ Smart routed to [bold]{p_name}/{m_id}[/bold] ({strat_name} strategy)[/dim]")
+                        console.print(f"[dim]⚡ Smart routed to [bold]{p_name}/{m_id}[/bold] ({t_type.value} task, {strat_name} strategy)[/dim]")
                     except Exception:
                         pass # Fallback
+            else:
+                from carbonclaw.routing.classifier import classify_task
+                t_type = classify_task(user_input)
 
             # Record history
             with open(history_path, "a", encoding="utf-8") as f:
@@ -564,15 +573,17 @@ async def _chat_loop(
             start_t = time.time()
             success = True
             try:
-                await _run_agent_turn(
-                    messages,
-                    active_provider,
-                    tools,
-                    active_model,
-                    config,
-                    streaming=streaming,
-                    renderer=renderer,
-                )
+                from carbonclaw.telemetry.otel import trace_span
+                with trace_span(f"chat.turn.{t_type.value}", task_type=t_type.value):
+                    await _run_agent_turn(
+                        messages,
+                        active_provider,
+                        tools,
+                        active_model,
+                        config,
+                        streaming=streaming,
+                        renderer=renderer,
+                    )
             except KeyboardInterrupt:
                 console.print("\n[yellow]Interrupted.[/yellow]")
                 if renderer:

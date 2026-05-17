@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -13,6 +14,15 @@ class Usage(BaseModel):
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
+
+
+class TaskType(str, Enum):
+    """Categories of tasks for specialized model routing."""
+
+    CODING = "coding"
+    RESEARCH = "research"
+    SLIDES = "slides"
+    GENERAL = "general"
 
 
 class ToolCallChunk(BaseModel):

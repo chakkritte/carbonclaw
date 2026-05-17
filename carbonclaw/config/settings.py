@@ -168,6 +168,15 @@ class CarbonClawConfig(BaseSettings):
 
     # Routing
     routing_strategy: str = "sustainability"  # sustainability, latency, balanced
+    routing_models: dict[str, str] = Field(
+        default_factory=lambda: {
+            "coding": "qwen2.5-coder:32b",
+            "research": "qwen2.5:32b",
+            "slides": "qwen2.5-coder:32b",
+            "general": "llama3.2:3b",
+            "fallback": "llama3.1:8b",
+        }
+    )
     agent_overrides: dict[str, str] = Field(
         default_factory=lambda: {
             "planner": "claude-3-5-sonnet-latest",

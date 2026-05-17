@@ -31,6 +31,7 @@ def carbon(
     console.print(f"🌱 [bold green]CarbonClaw Sustainability Report[/bold green]")
     console.print(f"[bold]Total sessions tracked:[/bold] {len(records)}")
     console.print(f"[bold]Total emissions:[/bold] [bold white]{total:.6f} kg CO2[/bold white]")
+    console.print(f"[bold]Routing Efficiency:[/bold] Task-aware model selection enabled.")
     
     # Approximation
     driving_km = total * 5.0
