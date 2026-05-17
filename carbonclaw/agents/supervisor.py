@@ -48,6 +48,8 @@ class SupervisorAgent:
         model: str | None = None,
         approval_callback: ApprovalCallback | None = None,
     ) -> None:
+        from carbonclaw.config.settings import CarbonClawConfig
+        
         self.provider = provider
         self.tools = tools
         self.memory = memory
@@ -56,13 +58,27 @@ class SupervisorAgent:
         self.bus = EventBus()
         self._agents: dict[str, ReactAgent] = {}
         self._running: dict[str, asyncio.Task[Any]] = {}
+        
+        config = CarbonClawConfig()
+        overrides = config.agent_overrides
+
+        # Helper to create agent with optional override
+        def create_agent(cls: type[ReactAgent], name: str) -> ReactAgent:
+            target_model = overrides.get(name, "auto")
+            if target_model == "auto" or target_model is None:
+                return cls(provider, tools, memory, model, approval_callback=approval_callback)
+            
+            # If overridden, create a specific provider/model for this agent
+            # For simplicity, we assume model name contains provider info or use default
+            # In a full impl, we'd parse "openai:gpt-4o"
+            return cls(provider, tools, memory, target_model, approval_callback=approval_callback)
 
         # Register agents
-        self._agents["planner"] = PlannerAgent(provider, tools, memory, model, approval_callback=approval_callback)
-        self._agents["coding"] = CodingAgent(provider, tools, memory, model, approval_callback=approval_callback)
-        self._agents["review"] = ReviewAgent(provider, tools, memory, model, approval_callback=approval_callback)
-        self._agents["qa"] = QAAgent(provider, tools, memory, model, approval_callback=approval_callback)
-        self._agents["docs"] = DocsAgent(provider, tools, memory, model, approval_callback=approval_callback)
+        self._agents["planner"] = create_agent(PlannerAgent, "planner")
+        self._agents["coding"] = create_agent(CodingAgent, "coding")
+        self._agents["review"] = create_agent(ReviewAgent, "review")
+        self._agents["qa"] = create_agent(QAAgent, "qa")
+        self._agents["docs"] = create_agent(DocsAgent, "docs")
 
     async def delegate(
         self,

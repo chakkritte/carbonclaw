@@ -167,6 +167,13 @@ class CarbonClawConfig(BaseSettings):
 
     # Routing
     routing_strategy: str = "sustainability"  # sustainability, latency, balanced
+    agent_overrides: dict[str, str] = Field(
+        default_factory=lambda: {
+            "planner": "claude-3-5-sonnet-latest",
+            "coding": "auto",
+            "review": "auto",
+        }
+    )
 
     # Memory
     memory_backend: str = "sqlite"

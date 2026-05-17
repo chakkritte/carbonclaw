@@ -130,11 +130,22 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/chat/stream")
-    async def chat_stream(request: Request, prompt: str) -> StreamingResponse:
+    async def chat_stream(
+        request: Request, 
+        prompt: str, 
+        provider: str | None = None,
+        model: str | None = None
+    ) -> StreamingResponse:
         """SSE endpoint for streaming chat with the supervisor agent."""
         async def event_generator() -> AsyncIterator[str]:
             try:
-                supervisor = await SupervisorAgent.create_default(config.default_provider)
+                p_name = provider or config.default_provider
+                m_id = model or config.default_model
+                supervisor = await SupervisorAgent.create_default(p_name)
+                # Override model if specified
+                if m_id:
+                    supervisor.model = m_id
+                
                 async for text in supervisor.stream_delegate("coding", prompt):
                     yield f"data: {json.dumps({'type': 'text', 'content': text})}\n\n"
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
@@ -147,6 +158,21 @@ def create_app() -> FastAPI:
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
         )
+
+    @app.post("/agent/execute")
+    async def execute_agent(payload: dict[str, Any]) -> dict[str, Any]:
+        """One-shot agent execution (headless)."""
+        prompt = payload.get("prompt", "")
+        agent_type = payload.get("agent", "coding")
+        p_name = payload.get("provider") or config.default_provider
+        m_id = payload.get("model") or config.default_model
+
+        supervisor = await SupervisorAgent.create_default(p_name)
+        if m_id:
+            supervisor.model = m_id
+            
+        result = await supervisor.delegate(agent_type, prompt)
+        return {"result": result, "agent": agent_type, "model": m_id}
 
     @app.post("/tasks")
     async def submit_task(payload: dict[str, Any]) -> dict[str, Any]:

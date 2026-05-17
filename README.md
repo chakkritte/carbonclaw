@@ -19,7 +19,11 @@ curl -fsSL https://raw.githubusercontent.com/chakkritte/carbonclaw/main/install.
 - **Observability**: Built-in OpenTelemetry tracing for monitoring execution paths and token costs.
 - **Sustainability**: Real-time carbon emission tracking via `codecarbon` and proactive recommendations for local/greener models on simple tasks.
 - **Smart Routing**: Autonomous model selection based on task complexity, latency, and carbon footprint (inspired by OpenClaude).
-- **Human-in-the-Loop**: Mandatory approval gates for sensitive system operations, with colored diff previews.
+- **Agent Overrides**: Pin specific agents (Planner, Coding, Review) to different models/providers for maximum efficiency.
+- **Privacy First**: Built-in `/audit` command to scan conversation history for potential data leaks.
+- **Advanced Web**: `/fetch` command for JS-rendered web scraping using a full browser engine.
+- **Headless Mode**: Robust FastAPI server for remote agent execution and integration into other apps.
+- **Human-in-the-Loop**: Mandatory approval gates for sensitive system operations, with colored diff previews and session-based **Auto-Accept**.
 
 ## 🛠 Quick Start
 
@@ -47,6 +51,10 @@ The `carbonclaw chat` command provides a modern AI coding CLI experience:
 | **Draft preservation** | Press `Ctrl+C` while typing — draft is restored on next prompt |
 | **History search** | `/history <query>` or native `Ctrl+R` |
 | **Sustainability** | `/carbon` shows aggregated carbon emissions |
+| **Smart Routing** | `/strategy <mode>` toggles routing (sustainability, latency, balanced) |
+| **Provider Setup** | `/provider <name>` interactively switch LLM providers |
+| **Advanced Fetch** | `/fetch <url>` renders JS-heavy pages via Playwright |
+| **Privacy Audit** | `/audit` scans history for potential PII or secret leaks |
 | **Open editor** | `/editor` opens `$EDITOR` to compose long messages |
 | **Slash commands** | `/help`, `/clear`, `/undo`, `/redo`, `/mode`, `/compact`, `/export`, `/import` |
 | **Shell escape** | `!command` runs shell commands and injects results into the conversation |

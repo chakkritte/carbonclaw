@@ -156,6 +156,21 @@ class SlashRegistry:
             _cmd_import,
         )
         self.register(
+            "provider",
+            "List and switch between configured LLM providers.",
+            _cmd_provider,
+        )
+        self.register(
+            "fetch",
+            "Advanced web scraping/fetching using BrowserTool.",
+            _cmd_fetch,
+        )
+        self.register(
+            "audit",
+            "Scan history for potential leaks (secrets, keys).",
+            _cmd_audit,
+        )
+        self.register(
             "mode",
             "Switch agent mode (normal, plan, code, review, qa, docs).",
             _cmd_mode,
@@ -312,6 +327,84 @@ async def _cmd_model(_messages: list[Message], args: str, _registry: SlashRegist
 
 async def _cmd_cost(_messages: list[Message], _args: str, _registry: SlashRegistry) -> SlashResult:
     return SlashResult(output="[dim]Cost tracking (tokens) is not yet implemented.[/dim]")
+
+
+async def _cmd_audit(_messages: list[Message], _args: str, _registry: SlashRegistry) -> SlashResult:
+    """Scan history for potential leaks (secrets, keys)."""
+    import re
+    
+    # Simple regex for potential secrets
+    patterns = {
+        "API Key": r"(?:key|api|token|secret|password)[\s:=]+['\"]?([a-zA-Z0-9_\-\.]{16,})['\"]?",
+        "Email": r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+",
+    }
+    
+    findings = []
+    for msg in _messages:
+        if not msg.content:
+            continue
+        for name, pattern in patterns.items():
+            if re.search(pattern, msg.content, re.IGNORECASE):
+                findings.append(f"- [yellow]Potential {name} detected[/yellow] in {msg.role} message.")
+
+    if not findings:
+        return SlashResult(output="[bold green]✅ Privacy Audit passed.[/bold green] No obvious leaks detected in current context.")
+    
+    output = "[bold red]⚠️ Privacy Audit Findings:[/bold red]\n" + "\n".join(findings)
+    output += "\n\n[dim]Recommendation: Use /compact or /clear if these are sensitive.[/dim]"
+    return SlashResult(output=output)
+
+
+async def _cmd_fetch(_messages: list[Message], args: str, _registry: SlashRegistry) -> SlashResult:
+    """Fetch and render a URL using BrowserTool."""
+    url = args.strip()
+    if not url:
+        return SlashResult(output="[red]Please provide a URL.[/red]")
+    
+    from carbonclaw.tools.browser import BrowserTool
+    from rich.console import Console
+    tool = BrowserTool()
+    
+    console = Console()
+    console.print(f"[dim]🌐 Fetching and rendering {url}...[/dim]")
+    
+    # Run in a temporary browser session
+    try:
+        result = await tool.execute({"url": url, "action": "goto"})
+        if result.is_error:
+            return SlashResult(output=f"[red]Fetch failed:[/red] {result.content}")
+        
+        # Get markdown
+        content = await tool.execute({"action": "markdown"})
+        return SlashResult(output=f"## Content from {url}\n\n{content.content[:5000]}")
+    except Exception as e:
+        return SlashResult(output=f"[red]Error during fetch:[/red] {str(e)}")
+
+
+async def _cmd_provider(_messages: list[Message], args: str, _registry: SlashRegistry) -> SlashResult:
+    """List or switch providers."""
+    from carbonclaw.config.settings import CarbonClawConfig
+    config = CarbonClawConfig()
+    
+    available = ["openai", "anthropic", "gemini", "ollama"]
+    
+    target = args.strip().lower()
+    if not target:
+        output = "[bold white]Available Providers:[/bold white]\n"
+        for p in available:
+            active = " (active)" if p == config.default_provider else ""
+            output += f"- {p}{active}\n"
+        output += "\nUsage: `/provider <name>` to switch."
+        return SlashResult(output=output)
+
+    if target in available:
+        config.default_provider = target
+        return SlashResult(
+            output=f"Provider switched to [bold green]{target}[/bold green]. Context will re-init.",
+            new_model="auto" 
+        )
+    
+    return SlashResult(output=f"[red]Unknown provider: {target}[/red]")
 
 
 async def _cmd_mode(messages: list[Message], args: str, _registry: SlashRegistry) -> SlashResult:
