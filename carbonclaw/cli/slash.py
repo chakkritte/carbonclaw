@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from rich.table import Table
+from rich.console import Console
 
 from carbonclaw.core.models import Message
 
