@@ -18,6 +18,7 @@ from carbonclaw.config.settings import CarbonClawConfig
 from carbonclaw.core.models import CompletionRequest, Message, StreamChunk, ToolCall
 from carbonclaw.memory.sqlite import SQLiteMemory
 from carbonclaw.providers.registry import ProviderRegistry
+from carbonclaw.telemetry.carbon import CarbonStore
 from carbonclaw.tools.base import ToolRegistry
 from carbonclaw.tools.file import FilePatchTool, FileReadTool, FileWriteTool
 from carbonclaw.tools.git import GitTool
@@ -59,6 +60,23 @@ class ChatMessage(Static):
             yield Static(f"[{self.role}] {self.content}")
 
 
+class EmissionTrackerWidget(Static):
+    """Widget to display aggregated carbon emissions."""
+
+    emissions = reactive(0.0)
+
+    def on_mount(self) -> None:
+        self.set_interval(5, self.update_emissions)
+        self.update_emissions()
+
+    def update_emissions(self) -> None:
+        store = CarbonStore()
+        self.emissions = store.total_emissions()
+
+    def render(self) -> str:
+        return f"🌱 [bold green]CO2: {self.emissions:.6f} kg[/bold green]"
+
+
 class CarbonClawApp(App[None]):
     """Full-screen Textual TUI for CarbonClaw."""
 
@@ -75,6 +93,14 @@ class CarbonClawApp(App[None]):
     #input-container {
         height: auto;
         dock: bottom;
+        align: middle;
+    }
+    #chat-input {
+        width: 1fr;
+    }
+    #carbon-tracker {
+        width: auto;
+        padding: 1 2;
     }
     Input {
         margin: 1;
@@ -109,6 +135,7 @@ class CarbonClawApp(App[None]):
             yield ChatMessage("assistant", "Welcome to CarbonClaw. Type a message to begin.")
         with Horizontal(id="input-container"):
             yield Input(placeholder="Type a message...", id="chat-input")
+            yield EmissionTrackerWidget(id="carbon-tracker")
         yield Footer()
 
     async def on_mount(self) -> None:

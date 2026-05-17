@@ -45,6 +45,7 @@ The `carbonclaw chat` command provides a modern AI coding CLI experience:
 | **Multi-line input** | End a line with `\` or type ` ``` ` to start a code block |
 | **Draft preservation** | Press `Ctrl+C` while typing — draft is restored on next prompt |
 | **History search** | `/history <query>` or native `Ctrl+R` |
+| **Sustainability** | `/carbon` shows aggregated carbon emissions |
 | **Open editor** | `/editor` opens `$EDITOR` to compose long messages |
 | **Slash commands** | `/help`, `/clear`, `/undo`, `/redo`, `/mode`, `/compact`, `/export`, `/import` |
 | **Shell escape** | `!command` runs shell commands and injects results into the conversation |

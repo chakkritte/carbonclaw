@@ -175,11 +175,33 @@ class SlashRegistry:
             "Initialize a project-specific CARBONCLAW.md file.",
             _cmd_init,
         )
+        self.register(
+            "carbon",
+            "Show aggregated carbon emissions for this project.",
+            _cmd_carbon,
+        )
 
 
 # ---------------------------------------------------------------------- #
 # Default handlers
 # ---------------------------------------------------------------------- #
+
+
+async def _cmd_carbon(_messages: list[Message], _args: str, _registry: SlashRegistry) -> SlashResult:
+    """Show aggregated carbon emissions."""
+    from carbonclaw.telemetry.carbon import CarbonStore
+    store = CarbonStore()
+    total = store.total_emissions()
+    
+    # Approximation: 1kg CO2 is roughly 4-5 km of driving a car
+    driving_km = total * 5.0 
+    
+    output = (
+        f"🌱 [bold green]Sustainability Report[/bold green]\n"
+        f"Total carbon emissions: [bold white]{total:.6f} kg CO2[/bold white]\n"
+        f"Equivalent to driving approx [bold]{driving_km:.2f} km[/bold] in a petrol car."
+    )
+    return SlashResult(output=output)
 
 
 async def _cmd_init(messages: list[Message], _args: str, _registry: SlashRegistry) -> SlashResult:

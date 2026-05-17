@@ -100,4 +100,20 @@ async def cli_approval_callback(name: str, arguments: dict[str, Any]) -> bool:
 
 
 # Import command modules to register them
-from carbonclaw.cli import init, update, chat, config_cmd, doctor, memory_cmd, models, plan, run, snapshot, tui_cmd, web, worker  # noqa: E402, F401
+from carbonclaw.cli import (  # noqa: E402, F401
+    carbon_cmd,
+    chat,
+    config_cmd,
+    doctor,
+    init,
+    memory_cmd,
+    models,
+    plan,
+    run,
+    snapshot,
+    telemetry_cmd,
+    tui_cmd,
+    update,
+    web,
+    worker,
+)

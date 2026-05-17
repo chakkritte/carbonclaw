@@ -208,17 +208,22 @@ async def _run_agent_turn(
     renderer: ChatRenderer | None = None,
 ) -> None:
     """Run one ReAct turn."""
+    from carbonclaw.telemetry.carbon import track_carbon
+    
     max_iterations = 10
-    for _ in range(max_iterations):
-        content_parts: list[str] = []
-        tool_calls: list[ToolCall] = []
-        current_tool: dict[str, Any] | None = None
+    with track_carbon("chat_session", enabled=config.carbon_tracking_enabled) as ct:
+        for _ in range(max_iterations):
+            content_parts: list[str] = []
+            tool_calls: list[ToolCall] = []
+            current_tool: dict[str, Any] | None = None
 
-        request = CompletionRequest(
-            messages=messages,
-            model=model,
-            tools=tools.definitions(),
-        )
+            request = CompletionRequest(
+                messages=messages,
+                model=model,
+                tools=tools.definitions(),
+            )
+            
+            # ... (streaming loop) ...
 
         if streaming:
             if renderer:
@@ -339,6 +344,11 @@ async def _run_agent_turn(
             renderer.start_assistant()
             renderer.append_stream("Reached maximum tool iterations.")
             renderer.end_assistant()
+
+    if config.carbon_tracking_enabled:
+        emissions = ct.last_emissions
+        if emissions > 0:
+            console.print(f"\n[dim]🌱 Turn emissions: {emissions:.6f} kg CO2[/dim]")
 
 
 async def _chat_loop(
