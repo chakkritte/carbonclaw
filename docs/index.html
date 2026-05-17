@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation | CarbonClaw</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0c10;
+            --fg: #e6edf3;
+            --accent: #238636;
+            --accent-light: #2ea043;
+            --muted: #8b949e;
+            --border: #30363d;
+            --surface: #161b22;
+            --sidebar-width: 260px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--fg);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        /* Sidebar */
+        aside {
+            width: var(--sidebar-width);
+            height: 100vh;
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            position: fixed;
+            background: var(--bg);
+        }
+
+        .sidebar-logo {
+            font-weight: 800;
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            display: block;
+            text-decoration: none;
+            color: var(--fg);
+        }
+
+        .nav-group {
+            margin-bottom: 2rem;
+        }
+
+        .nav-group h4 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 1rem;
+            letter-spacing: 0.05em;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-light);
+        }
+
+        /* Main Content */
+        main {
+            margin-left: var(--sidebar-width);
+            padding: 4rem;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.75rem; margin-top: 3rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.25rem; margin-top: 2rem; margin-bottom: 1rem; }
+        p { margin-bottom: 1.5rem; color: var(--fg); opacity: 0.9; }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--surface);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        pre code { background: none; padding: 0; }
+
+        .info-box {
+            background: rgba(35, 134, 54, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            aside { display: none; }
+            main { margin-left: 0; padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <a href="../index.html" class="sidebar-logo">🤖 CarbonClaw</a>
+        
+        <div class="nav-group">
+            <h4>Getting Started</h4>
+            <a href="index.html" class="nav-link active">Overview</a>
+            <a href="https://github.com/chakkritte/carbonclaw#quick-start" class="nav-link">Installation</a>
+        </div>
+
+        <div class="nav-group">
+            <h4>Core Features</h4>
+            <a href="routing.html" class="nav-link">Smart Routing</a>
+            <a href="research.html" class="nav-link">Advanced Research</a>
+            <a href="slides.html" class="nav-link">Slide Generation</a>
+        </div>
+
+        <div class="nav-group">
+            <h4>Sustainability</h4>
+            <a href="sustainability.html" class="nav-link">Carbon Tracking</a>
+        </div>
+    </aside>
+
+    <main>
+        <h1>Documentation Overview</h1>
+        <p class="hero-desc">Welcome to the CarbonClaw documentation. CarbonClaw is an AI-native runtime designed for professional, sustainable, and private autonomous engineering.</p>
+
+        <div class="info-box">
+            <strong>Local-First Philosophy</strong>
+            <p>CarbonClaw prioritizes local LLMs (via Ollama) to ensure data privacy and reduce the environmental impact of cloud computation.</p>
+        </div>
+
+        <h2>Project Principles</h2>
+        <ul>
+            <li><strong>Privacy-First</strong>: Sensitive code never leaves your machine unless you explicitly use a cloud provider.</li>
+            <li><strong>Sustainability</strong>: Real-time CO2 monitoring helps you understand the impact of your AI usage.</li>
+            <li><strong>Autonomous</strong>: Go beyond simple chat. Let specialized agents coordinate to solve complex engineering cycles.</li>
+        </ul>
+
+        <h2>Quick Navigation</h2>
+        <p>Explore our detailed guides to get the most out of CarbonClaw:</p>
+        <ul>
+            <li><strong>Smart Routing</strong>: Learn how CarbonClaw automatically selects the best model for your task.</li>
+            <li><strong>Advanced Research</strong>: Deep dive into the Map-Reduce research pipeline.</li>
+            <li><strong>Slide Generation</strong>: See how to generate professional PowerPoint decks using Node.js integration.</li>
+        </ul>
+
+        <footer>
+            &copy; 2026 CarbonClaw Contributors. Released under MIT License.
+        </footer>
+    </main>
+</body>
+</html>

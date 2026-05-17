@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sustainability | CarbonClaw Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0c10;
+            --fg: #e6edf3;
+            --accent: #238636;
+            --accent-light: #2ea043;
+            --muted: #8b949e;
+            --border: #30363d;
+            --surface: #161b22;
+            --sidebar-width: 260px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--fg);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        aside {
+            width: var(--sidebar-width);
+            height: 100vh;
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            position: fixed;
+            background: var(--bg);
+        }
+
+        .sidebar-logo {
+            font-weight: 800;
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            display: block;
+            text-decoration: none;
+            color: var(--fg);
+        }
+
+        .nav-group { margin-bottom: 2rem; }
+        .nav-group h4 { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; letter-spacing: 0.05em; }
+        .nav-link { display: block; color: var(--muted); text-decoration: none; font-size: 0.9rem; margin-bottom: 0.75rem; transition: color 0.2s; }
+        .nav-link:hover, .nav-link.active { color: var(--accent-light); }
+
+        main {
+            margin-left: var(--sidebar-width);
+            padding: 4rem;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.75rem; margin-top: 3rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.25rem; margin-top: 2rem; margin-bottom: 1rem; }
+        p { margin-bottom: 1.5rem; color: var(--fg); opacity: 0.9; }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--surface);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        pre code { background: none; padding: 0; }
+
+        .info-box {
+            background: rgba(35, 134, 54, 0.1);
+            border-left: 4px solid var(--accent);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            aside { display: none; }
+            main { margin-left: 0; padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <a href="../index.html" class="sidebar-logo">🤖 CarbonClaw</a>
+        
+        <div class="nav-group">
+            <h4>Getting Started</h4>
+            <a href="index.html" class="nav-link">Overview</a>
+            <a href="https://github.com/chakkritte/carbonclaw#quick-start" class="nav-link">Installation</a>
+        </div>
+
+        <div class="nav-group">
+            <h4>Core Features</h4>
+            <a href="routing.html" class="nav-link">Smart Routing</a>
+            <a href="research.html" class="nav-link">Advanced Research</a>
+            <a href="slides.html" class="nav-link">Slide Generation</a>
+        </div>
+
+        <div class="nav-group">
+            <h4>Sustainability</h4>
+            <a href="sustainability.html" class="nav-link active">Carbon Tracking</a>
+        </div>
+    </aside>
+
+    <main>
+        <h1>Sustainability First</h1>
+        <p>CarbonClaw is the first AI agent runtime built with environmental impact as a core metric. We use the <code>codecarbon</code> library to monitor and report the CO2 emissions of every task.</p>
+
+        <h2>Real-Time Monitoring</h2>
+        <p>While you chat, CarbonClaw tracks the power consumption of your local hardware and estimates the emissions from cloud network calls. Each response turn ends with a detailed metric:</p>
+        <div class="terminal" style="background: var(--surface); padding: 1rem; border-radius: 8px; font-family: monospace; border: 1px solid var(--border); margin-bottom: 1.5rem;">
+            [Carbon Emissions: 0.000015 kg CO2]
+        </div>
+
+        <h2>Green Recommendations</h2>
+        <p>When the Smart Router detects a simple task, it will proactively suggest using a local model to reduce your footprint:</p>
+        <div class="info-box" style="margin: 0;">
+            <p>🌱 <em>"This task seems simple. Consider using a local LLM (e.g., Llama 3.2 via Ollama) to reduce carbon footprint from network and cloud compute."</em></p>
+        </div>
+
+        <h2>Sustainability Reports</h2>
+        <p>You can view your project's total environmental impact at any time using the <code>/carbon</code> command:</p>
+        <pre><code>/carbon</code></pre>
+        <p>This command provides a comprehensive report, including your total emissions and an equivalent "driving distance" comparison to help put the data in context.</p>
+
+        <h2>Offline Mode</h2>
+        <p>For air-gapped or low-connectivity environments, CarbonClaw can run in <strong>Offline Mode</strong>, using regional emission averages instead of live cloud data.</p>
+
+        <footer>
+            &copy; 2026 CarbonClaw Contributors. Released under MIT License.
+        </footer>
+    </main>
+</body>
+</html>
