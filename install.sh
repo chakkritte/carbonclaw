@@ -1,17 +1,17 @@
 #!/bin/bash
 set -e
 
-# Sena One-Line Installer
+# CarbonClaw One-Line Installer
 # Requires: python3.12+, git, uv
 
-echo "🤖 Installing Sena..."
+echo "🤖 Installing CarbonClaw..."
 
 # 1. Clone repository
-if [ ! -d "sena" ]; then
-    git clone https://github.com/chakkritte/sena.git
-    cd sena
+if [ ! -d "carbonclaw" ]; then
+    git clone https://github.com/chakkritte/carbonclaw.git
+    cd carbonclaw
 else
-    cd sena
+    cd carbonclaw
     git pull origin main
 fi
 
@@ -31,5 +31,5 @@ uv run playwright install chromium
 
 # 5. Done
 echo ""
-echo "✅ Sena installed successfully!"
-echo "🚀 Run 'uv run sena chat' to start."
+echo "✅ CarbonClaw installed successfully!"
+echo "🚀 Run 'uv run carbonclaw chat' to start."

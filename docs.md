@@ -1,4 +1,4 @@
-# Sena Documentation
+# CarbonClaw Documentation
 
 Detailed guide for architecture, advanced usage, and configuration.
 
@@ -17,10 +17,10 @@ Detailed guide for architecture, advanced usage, and configuration.
 
 ## Architecture
 
-Sena is built with a modular, async-first architecture:
+CarbonClaw is built with a modular, async-first architecture:
 
 ```
-sena/
+carbonclaw/
 ├── cli/           # Typer + Rich terminal interface (chat, run, plan, doctor)
 ├── core/          # Shared Pydantic models, base classes, async event bus
 ├── context/       # Token budgeting, summarization, sliding window trimming
@@ -48,7 +48,7 @@ sena/
 Use the Supervisor to orchestrate complex pipelines:
 
 ```python
-from sena.agents.supervisor import SupervisorAgent
+from carbonclaw.agents.supervisor import SupervisorAgent
 import asyncio
 
 async def main():
@@ -71,7 +71,7 @@ Token budgeting and conversation summarization are handled automatically by the 
 
 ## Model Context Protocol (MCP)
 
-Sena supports external tools via MCP. Configure them in your `config.toml`:
+CarbonClaw supports external tools via MCP. Configure them in your `config.toml`:
 
 ```toml
 [mcp_servers.filesystem]
@@ -80,7 +80,7 @@ command = "npx"
 args = ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/search"]
 ```
 
-**Ollama Support**: When using the `ollama` provider, Sena automatically connects to the [ollama-web-tools-mcp](https://github.com/chakkritte/ollama-web-tools-mcp) server if found.
+**Ollama Support**: When using the `ollama` provider, CarbonClaw automatically connects to the [ollama-web-tools-mcp](https://github.com/chakkritte/ollama-web-tools-mcp) server if found.
 
 ---
 
@@ -89,7 +89,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/search"]
 Execute commands in isolated containers for security:
 
 ```python
-from sena.sandbox.docker import DockerSandbox
+from carbonclaw.sandbox.docker import DockerSandbox
 
 sandbox = DockerSandbox(
     image="python:3.12-slim",
@@ -107,7 +107,7 @@ result = await sandbox.execute(command="python -c 'print(2+2)'")
 Enable semantic search with ChromaDB:
 
 ```python
-from sena.vector.chroma import ChromaMemory
+from carbonclaw.vector.chroma import ChromaMemory
 
 memory = ChromaMemory(path="./chroma_data")
 await memory.store("JWT tokens are used for auth", namespace="docs")
@@ -121,7 +121,7 @@ results = await memory.retrieve(query="How to auth?", namespace="docs")
 Save and restore execution state:
 
 ```python
-from sena.agents.snapshot import AgentSnapshot
+from carbonclaw.agents.snapshot import AgentSnapshot
 snapshot = AgentSnapshot()
 id = snapshot.save(state, agent_name="coding")
 ```
@@ -130,7 +130,7 @@ id = snapshot.save(state, agent_name="coding")
 
 ## Worker Pools
 
-Scale Sena using remote workers and a priority task queue.
+Scale CarbonClaw using remote workers and a priority task queue.
 
 ---
 
@@ -145,4 +145,4 @@ Provides building blocks for multi-node deployments:
 
 ## Plugin System
 
-Create plugins by implementing `SenaPlugin` and registering via `[project.entry-points."sena.plugins"]`.
+Create plugins by implementing `CarbonClawPlugin` and registering via `[project.entry-points."carbonclaw.plugins"]`.

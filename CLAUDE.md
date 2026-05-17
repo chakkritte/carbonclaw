@@ -11,36 +11,36 @@ All development tasks are managed through `uv`. The project uses `hatchling` as 
 uv sync --all-extras
 
 # Run the CLI
-uv run sena --version
-uv run sena chat --provider ollama --model llama3.2
+uv run carbonclaw --version
+uv run carbonclaw chat --provider ollama --model llama3.2
 
 # Run tests
-uv run pytest sena/tests -v
-uv run pytest sena/tests/unit/test_providers.py -v
+uv run pytest carbonclaw/tests -v
+uv run pytest carbonclaw/tests/unit/test_providers.py -v
 
 # Lint and type check
-uv run ruff check sena
-uv run mypy sena
+uv run ruff check carbonclaw
+uv run mypy carbonclaw
 ```
 
 **Tool configuration (from `pyproject.toml`):**
 - `ruff`: target Python 3.12, line length 100, lint rules include `E F W I N D UP B C4 SIM ASYNC`
 - `mypy`: strict mode, `disallow_untyped_defs = true`
-- `pytest`: `asyncio_mode = auto`, tests under `sena/tests`
+- `pytest`: `asyncio_mode = auto`, tests under `carbonclaw/tests`
 
 ## High-Level Architecture
 
 ### Unified Provider Abstraction
 
-All LLM providers implement `BaseProvider` (`sena/core/base.py`) with two methods:
+All LLM providers implement `BaseProvider` (`carbonclaw/core/base.py`) with two methods:
 - `complete(request)` — non-streaming
 - `stream(request)` — yields `StreamChunk` objects
 
-The key design decision is `StreamChunk` (`sena/core/models.py`), a normalized chunk format that carries either text content or a `ToolCallChunk` fragment. Providers translate vendor-specific streaming deltas into this format. **OpenRouter and DeepSeek reuse `OpenAIProvider`** instantiated with different base URLs and API keys; they are not separate classes.
+The key design decision is `StreamChunk` (`carbonclaw/core/models.py`), a normalized chunk format that carries either text content or a `ToolCallChunk` fragment. Providers translate vendor-specific streaming deltas into this format. **OpenRouter and DeepSeek reuse `OpenAIProvider`** instantiated with different base URLs and API keys; they are not separate classes.
 
 ### Streaming Tool Call Accumulation
 
-Tool calls arrive fragmented across multiple stream chunks. Both `ReactAgent.stream_run()` and `_run_agent_turn()` in `sena/cli/chat.py` implement the same accumulator pattern:
+Tool calls arrive fragmented across multiple stream chunks. Both `ReactAgent.stream_run()` and `_run_agent_turn()` in `carbonclaw/cli/chat.py` implement the same accumulator pattern:
 
 1. Track `current_tool` as a dict with `id`, `name`, `arguments` (string).
 2. On `tc.is_start`, initialize `current_tool`.
@@ -52,7 +52,7 @@ This pattern is duplicated in three places (`ReactAgent.run`, `ReactAgent.stream
 
 ### ReAct Agent Loop
 
-`ReactAgent` (`sena/agents/base.py`) runs a fixed `max_iterations` loop (default 10). Each iteration:
+`ReactAgent` (`carbonclaw/agents/base.py`) runs a fixed `max_iterations` loop (default 10). Each iteration:
 1. Streams a completion request including prior messages and tool definitions.
 2. Accumulates the response into an assistant `Message`.
 3. If the message contains `tool_calls`, executes each tool and appends tool result messages.
@@ -62,7 +62,7 @@ The loop does not distinguish between "thinking" and "acting" — it is purely m
 
 ### Supervisor Orchestration
 
-`SupervisorAgent` (`sena/agents/supervisor.py`) coordinates three specialized agents via an `EventBus`:
+`SupervisorAgent` (`carbonclaw/agents/supervisor.py`) coordinates three specialized agents via an `EventBus`:
 - **Planner** — breaks tasks into steps
 - **Coding** — implements the plan
 - **Review** — reviews the implementation
@@ -71,31 +71,31 @@ The supervisor does not stream between agents; it delegates sequentially and con
 
 ### Chat UI Rendering
 
-`sena/cli/chat.py` uses `StreamingDisplay` (`sena/ui/streaming.py`) for streaming output. The display wraps `rich.live.Live` with `transient=False`, meaning the panel remains on screen after streaming ends. **Do not call `_print_assistant()` after streaming completes** — this creates a duplicate panel. The `_print_assistant()` helper is only used in `--no-stream` mode.
+`carbonclaw/cli/chat.py` uses `StreamingDisplay` (`carbonclaw/ui/streaming.py`) for streaming output. The display wraps `rich.live.Live` with `transient=False`, meaning the panel remains on screen after streaming ends. **Do not call `_print_assistant()` after streaming completes** — this creates a duplicate panel. The `_print_assistant()` helper is only used in `--no-stream` mode.
 
 Tool results are rendered in yellow-bordered panels (red if `is_error`). Dangerous shell commands trigger an interactive `rich.prompt.Confirm` unless `auto_approve_safe_commands` is enabled in config.
 
 ### Configuration Resolution
 
-`SenaConfig` (`sena/config/settings.py`) resolves settings in this order (highest to lowest):
+`CarbonClawConfig` (`carbonclaw/config/settings.py`) resolves settings in this order (highest to lowest):
 1. Constructor arguments / code overrides
-2. Environment variables (`SENA_*`, nested with `__`)
-3. `pyproject.toml` under `[tool.sena]`
-4. User config at `~/.config/sena/config.toml`
+2. Environment variables (`CARBONCLAW_*`, nested with `__`)
+3. `pyproject.toml` under `[tool.carbonclaw]`
+4. User config at `~/.config/carbonclaw/config.toml`
 5. Class defaults
 
-Provider credentials are nested: `SENA_OPENAI__API_KEY` maps to `config.openai.api_key`. The `_ProjectSource` and `_UserSource` classes implement the custom TOML resolution.
+Provider credentials are nested: `CARBONCLAW_OPENAI__API_KEY` maps to `config.openai.api_key`. The `_ProjectSource` and `_UserSource` classes implement the custom TOML resolution.
 
 ### Tool Registry and Schema Generation
 
-`ToolRegistry` (`sena/tools/base.py`) registers `BaseTool` instances. Tool definitions are generated manually via `input_schema` on each tool class, not introspected from Python functions. The registry provides `definitions()` which returns `ToolDefinition` objects normalized to OpenAI-compatible JSON Schema.
+`ToolRegistry` (`carbonclaw/tools/base.py`) registers `BaseTool` instances. Tool definitions are generated manually via `input_schema` on each tool class, not introspected from Python functions. The registry provides `definitions()` which returns `ToolDefinition` objects normalized to OpenAI-compatible JSON Schema.
 
 Tool execution is always `async`. Results are returned as `ToolResult` with `tool_call_id`, `name`, `content`, and `is_error`.
 
 ### Memory Backends
 
-- **SQLiteMemory** (`sena/memory/sqlite.py`): Async SQLite with namespace support. Default path is `~/.config/sena/memory.db`. Stores `MemoryEntry` with JSON metadata.
-- **ChromaMemory** (`sena/vector/chroma.py`): Optional ChromaDB for semantic search. Not loaded unless explicitly configured.
+- **SQLiteMemory** (`carbonclaw/memory/sqlite.py`): Async SQLite with namespace support. Default path is `~/.config/carbonclaw/memory.db`. Stores `MemoryEntry` with JSON metadata.
+- **ChromaMemory** (`carbonclaw/vector/chroma.py`): Optional ChromaDB for semantic search. Not loaded unless explicitly configured.
 
 ### Distributed Runtime
 
@@ -108,7 +108,7 @@ These are intentionally simple; production multi-node setups are expected to swa
 
 ### Important File Relationships
 
-- `sena/cli/main.py` imports all command modules at the bottom to register Typer subcommands.
-- `sena/providers/registry.py` maps provider names to classes. Adding a new provider requires updating `_PROVIDER_MAP` and `get_provider_config()` in `SenaConfig`.
-- `sena/agents/supervisor.py` hardcodes agent names (`"planner"`, `"coding"`, `"review"`).
-- `sena/__init__.py` exports `__version__`.
+- `carbonclaw/cli/main.py` imports all command modules at the bottom to register Typer subcommands.
+- `carbonclaw/providers/registry.py` maps provider names to classes. Adding a new provider requires updating `_PROVIDER_MAP` and `get_provider_config()` in `CarbonClawConfig`.
+- `carbonclaw/agents/supervisor.py` hardcodes agent names (`"planner"`, `"coding"`, `"review"`).
+- `carbonclaw/__init__.py` exports `__version__`.

@@ -1,11 +1,11 @@
-# Sena 🤖
+# CarbonClaw 🤖
 
-Sena is an AI-native runtime for autonomous software engineering, multi-agent collaboration, and self-evolving research workflows.
+CarbonClaw is an AI-native runtime for autonomous software engineering, multi-agent collaboration, and self-evolving research workflows.
 
 ## 🚀 One-Line Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chakkritte/sena/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/chakkritte/carbonclaw/main/install.sh | bash
 ```
 *Requires Python 3.12+, Git, and uv.*
 
@@ -23,21 +23,21 @@ curl -fsSL https://raw.githubusercontent.com/chakkritte/sena/main/install.sh | b
 
 ```bash
 # Initialize your custom agent persona
-sena init
+carbonclaw init
 
 # Start an interactive chat
-sena chat
+carbonclaw chat
 
 # Run a one-shot engineering task
-sena run "Refactor sena/core/base.py to use Protocol instead of ABC"
+carbonclaw run "Refactor carbonclaw/core/base.py to use Protocol instead of ABC"
 
 # Setup your preferred model/provider
-sena models
+carbonclaw models
 ```
 
 ## 💬 Chat Features
 
-The `sena chat` command provides a modern AI coding CLI experience:
+The `carbonclaw chat` command provides a modern AI coding CLI experience:
 
 | Feature | How to Use |
 |---------|-----------|
