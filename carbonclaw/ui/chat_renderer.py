@@ -262,16 +262,17 @@ class ChatRenderer:
 
         if not is_error:
             if name in ("file_read", "file_write"):
-                # Try to detect language from messages history or assume based on content
-                # For simplicity, we'll use a basic detection or default to python/markdown
+                # Try to detect language or default to python
                 lang = "python"
-                for msg in reversed(self.messages):
-                    if msg.role == "tool" and msg.tool_name == name and msg.tool_result == result:
-                        # Logic to find the path in arguments could go here
-                        pass
                 content_renderable = Syntax(display, lang, theme="monokai", line_numbers=True, word_wrap=True)
             elif name == "file_patch":
                 content_renderable = Syntax(display, "diff", theme="monokai", word_wrap=True)
+            elif name == "shell":
+                # Use sh/bash highlighting for shell outputs
+                content_renderable = Syntax(display, "sh", theme="monokai", word_wrap=True)
+            elif name == "git":
+                # Keep git output as raw text (except git diff which was explicitly excluded from rich syntax)
+                content_renderable = Text(display, style=style)
 
         self.console.print(
             Panel(
