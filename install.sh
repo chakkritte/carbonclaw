@@ -25,6 +25,10 @@ fi
 echo "📦 Syncing dependencies..."
 uv sync --all-extras
 
+# 3.1 Install globally (optional but recommended for global path access)
+echo "🌍 Installing 'carbonclaw' command globally..."
+uv tool install . --force
+
 # 4. Install playwright browsers
 echo "🌐 Installing browser binaries..."
 uv run playwright install chromium
