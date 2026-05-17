@@ -12,6 +12,7 @@ from rich.panel import Panel
 from rich.prompt import Prompt, Confirm
 
 from carbonclaw.cli.main import app
+from carbonclaw.config.settings import CarbonClawConfig
 
 console = Console()
 
