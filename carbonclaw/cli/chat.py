@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import os
 import readline
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +17,7 @@ from carbonclaw.cli.main import app, console
 from carbonclaw.cli.slash import SlashRegistry
 from carbonclaw.config.settings import CarbonClawConfig
 from carbonclaw.context.manager import ContextManager
-from carbonclaw.core.models import CompletionRequest, Message, ToolCall
+from carbonclaw.core.models import CompletionRequest, Message, ToolCall, StreamChunk
 from carbonclaw.memory.sqlite import SQLiteMemory
 from carbonclaw.prompts.base import PromptTemplate
 from carbonclaw.providers.registry import ProviderRegistry
@@ -149,52 +151,64 @@ def _read_input(console: Any, draft_manager: DraftManager) -> str:
 
         lines.append(next_line)
 
-        if in_code_block and next_line.strip() == "```":
-            # Code block closed
-            draft_manager.clear()
-            return "\n".join(lines)
-
 
 async def _execute_tools_with_approval(
     tool_calls: list[ToolCall],
-    registry: ToolRegistry,
+    tools: ToolRegistry,
     config: CarbonClawConfig,
     renderer: ChatRenderer | None = None,
 ) -> list[Message]:
-    """Execute tool calls with optional interactive approval."""
-    results: list[Message] = []
-    for tc in tool_calls:
-        tool = registry.get(tc.name)
-        if tool and tool.requires_approval:
-            from carbonclaw.cli.main import cli_approval_callback
-            approved = await cli_approval_callback(tc.name, tc.arguments)
-            if not approved:
-                if renderer:
-                    renderer.add_tool_result(
-                        tc.name,
-                        "User declined execution.",
-                        is_error=True,
-                    )
-                results.append(
-                    Message(
-                        role="tool",
-                        content="User declined execution.",
-                        tool_call_id=tc.id,
-                        name=tc.name,
-                    )
+    """Execute tools, potentially asking for human approval."""
+    from carbonclaw.cli.main import cli_approval_callback
+
+    results = []
+    for call in tool_calls:
+        # Check if approval is needed
+        needs_approval = True
+        safe_commands = ["ls", "pwd", "git status", "git diff", "cat", "grep", "find"]
+        
+        if config.auto_approve_safe_commands and call.name == "shell":
+            cmd = call.arguments.get("command", "")
+            if any(cmd.startswith(s) for s in safe_commands):
+                needs_approval = False
+        
+        if config.auto_approve_file_writes and call.name in ("file_write", "file_patch"):
+            needs_approval = False
+
+        approved = True
+        if needs_approval:
+            # If we have a renderer, we need to temporarily stop it to show the prompt
+            if renderer:
+                renderer.pause()
+                approved = await cli_approval_callback(call.name, call.arguments)
+                renderer.resume()
+            else:
+                approved = await cli_approval_callback(call.name, call.arguments)
+
+        if approved:
+            result = await tools.execute(call.name, call.arguments)
+            results.append(
+                Message(
+                    role="tool",
+                    content=result.content,
+                    tool_call_id=call.id,
+                    name=call.name,
                 )
-                continue
-        result = await registry.execute(tc.name, tc.arguments)
-        if renderer:
-            renderer.add_tool_result(tc.name, result.content, is_error=result.is_error)
-        results.append(
-            Message(
-                role="tool",
-                content=result.content,
-                tool_call_id=tc.id,
-                name=tc.name,
             )
-        )
+            if renderer:
+                renderer.add_tool_result(call.name, result.content)
+        else:
+            results.append(
+                Message(
+                    role="tool",
+                    content="Action cancelled by user.",
+                    tool_call_id=call.id,
+                    name=call.name,
+                )
+            )
+            if renderer:
+                renderer.add_tool_result(call.name, "Cancelled")
+    
     return results
 
 
@@ -222,52 +236,14 @@ async def _run_agent_turn(
                 model=model,
                 tools=tools.definitions(),
             )
-            
-            # ... (streaming loop) ...
 
-        if streaming:
-            if renderer:
-                renderer.start_assistant()
-                async for chunk in provider.stream(request):
-                    if chunk.content:
-                        content_parts.append(chunk.content)
-                        renderer.append_stream(chunk.content)
-                    if chunk.tool_call:
-                        tc = chunk.tool_call
-                        if tc.is_start:
-                            current_tool = {
-                                "id": tc.id or "",
-                                "name": tc.name or "",
-                                "arguments": "",
-                            }
-                            renderer.add_tool_call(tc.name or "tool")
-                        elif tc.arguments_delta:
-                            if current_tool is not None:
-                                current_tool["arguments"] += tc.arguments_delta
-                        elif tc.is_end:
-                            if current_tool is not None:
-                                import json
-
-                                try:
-                                    args = json.loads(current_tool["arguments"])
-                                except json.JSONDecodeError:
-                                    args = {}
-                                tool_calls.append(
-                                    ToolCall(
-                                        id=current_tool["id"],
-                                        name=current_tool["name"],
-                                        arguments=args,
-                                    )
-                                )
-                                current_tool = None
-                renderer.end_assistant()
-            else:
-                # Fallback when no renderer is provided
-                with StreamingDisplay(console, title="CarbonClaw") as stream:
+            if streaming:
+                if renderer:
+                    renderer.start_assistant()
                     async for chunk in provider.stream(request):
                         if chunk.content:
                             content_parts.append(chunk.content)
-                            stream.append(chunk.content)
+                            renderer.append_stream(chunk.content)
                         if chunk.tool_call:
                             tc = chunk.tool_call
                             if tc.is_start:
@@ -276,79 +252,106 @@ async def _run_agent_turn(
                                     "name": tc.name or "",
                                     "arguments": "",
                                 }
+                                renderer.add_tool_call(tc.name or "tool")
                             elif tc.arguments_delta:
                                 if current_tool is not None:
                                     current_tool["arguments"] += tc.arguments_delta
-                            elif tc.is_end and current_tool is not None:
-                                import json
-
-                                try:
-                                    args = json.loads(current_tool["arguments"])
-                                except json.JSONDecodeError:
-                                    args = {}
-                                tool_calls.append(
-                                    ToolCall(
-                                        id=current_tool["id"],
-                                        name=current_tool["name"],
-                                        arguments=args,
+                            elif tc.is_end:
+                                if current_tool is not None:
+                                    try:
+                                        args = json.loads(current_tool["arguments"])
+                                    except json.JSONDecodeError:
+                                        args = {}
+                                    tool_calls.append(
+                                        ToolCall(
+                                            id=current_tool["id"],
+                                            name=current_tool["name"],
+                                            arguments=args,
+                                        )
                                     )
-                                )
-                                current_tool = None
-        else:
-            # Non-streaming: single response
-            response = await provider.complete(request)
-            msg = response.message
-            if msg.content:
-                content_parts.append(msg.content)
-            if msg.tool_calls:
-                tool_calls = msg.tool_calls
+                                    current_tool = None
+                    renderer.end_assistant()
+                else:
+                    with StreamingDisplay(console, title="CarbonClaw") as stream:
+                        async for chunk in provider.stream(request):
+                            if chunk.content:
+                                content_parts.append(chunk.content)
+                                stream.append(chunk.content)
+                            if chunk.tool_call:
+                                tc = chunk.tool_call
+                                if tc.is_start:
+                                    current_tool = {
+                                        "id": tc.id or "",
+                                        "name": tc.name or "",
+                                        "arguments": "",
+                                    }
+                                elif tc.arguments_delta:
+                                    if current_tool is not None:
+                                        current_tool["arguments"] += tc.arguments_delta
+                                elif tc.is_end and current_tool is not None:
+                                    try:
+                                        args = json.loads(current_tool["arguments"])
+                                    except json.JSONDecodeError:
+                                        args = {}
+                                    tool_calls.append(
+                                        ToolCall(
+                                            id=current_tool["id"],
+                                            name=current_tool["name"],
+                                            arguments=args,
+                                        )
+                                    )
+                                    current_tool = None
+            else:
+                response = await provider.complete(request)
+                msg = response.message
+                if msg.content:
+                    content_parts.append(msg.content)
+                if msg.tool_calls:
+                    tool_calls = msg.tool_calls
 
-        # Flush dangling tool call
-        if current_tool is not None:
-            import json
-
-            try:
-                args = json.loads(current_tool["arguments"])
-            except json.JSONDecodeError:
-                args = {}
-            tool_calls.append(
-                ToolCall(
-                    id=current_tool["id"],
-                    name=current_tool["name"],
-                    arguments=args,
+            if current_tool is not None:
+                try:
+                    args = json.loads(current_tool["arguments"])
+                except json.JSONDecodeError:
+                    args = {}
+                tool_calls.append(
+                    ToolCall(
+                        id=current_tool["id"],
+                        name=current_tool["name"],
+                        arguments=args,
+                    )
                 )
+
+            assistant_content = "".join(content_parts)
+            assistant_msg = Message(
+                role="assistant",
+                content=assistant_content or None,
+                tool_calls=tool_calls or None,
             )
+            messages.append(assistant_msg)
 
-        assistant_content = "".join(content_parts)
-        assistant_msg = Message(
-            role="assistant",
-            content=assistant_content or None,
-            tool_calls=tool_calls or None,
-        )
-        messages.append(assistant_msg)
+            if not streaming and assistant_content and renderer:
+                renderer.start_assistant()
+                renderer.append_stream(assistant_content)
+                renderer.end_assistant()
 
-        if not streaming and assistant_content and renderer:
-            renderer.start_assistant()
-            renderer.append_stream(assistant_content)
-            renderer.end_assistant()
+            if not tool_calls:
+                break
 
-        if not tool_calls:
-            break
+            result_msgs = await _execute_tools_with_approval(
+                tool_calls, tools, config, renderer=renderer
+            )
+            messages.extend(result_msgs)
+        else:
+            if renderer:
+                renderer.start_assistant()
+                renderer.append_stream("Reached maximum tool iterations.")
+                renderer.end_assistant()
 
-        result_msgs = await _execute_tools_with_approval(
-            tool_calls, tools, config, renderer=renderer
-        )
-        messages.extend(result_msgs)
-    else:
-        if renderer:
-            renderer.start_assistant()
-            renderer.append_stream("Reached maximum tool iterations.")
-            renderer.end_assistant()
-
-    if config.carbon_tracking_enabled:
-        emissions = ct.last_emissions
-        if emissions > 0:
-            console.print(f"\n[dim]🌱 Turn emissions: {emissions:.6f} kg CO2[/dim]")
+        if config.carbon_tracking_enabled:
+            emissions = ct.last_emissions
+            if emissions > 0:
+                console.print(f"\n[dim]🌱 Turn emissions: {emissions:.6f} kg CO2[/dim]")
 
 
 async def _chat_loop(
@@ -404,181 +407,92 @@ async def _chat_loop(
     slash = SlashRegistry()
     ctx_mgr = ContextManager(provider, model=model)
 
-    # Header
-    console.print()
+    renderer = ChatRenderer(console)
     print_banner(console)
-    console.print(f"[dim]{provider_name}[/dim] / [bold cyan]{model}[/bold cyan]\n")
-    console.print(
-        "[dim]Type a message or [bold]exit[/bold] to quit. "
-        "Use [bold]/help[/bold] for commands, [bold]![/bold] for shell escape.[/dim]\n"
-    )
+    console.print(f"Chatting with [bold green]{provider_name}/{model}[/bold green]")
+    console.print("[dim]Type /help for commands, !command for shell, or Ctrl+C to exit.[/dim]\n")
 
     system_prompt = _build_system_prompt(config)
     messages: list[Message] = [Message(role="system", content=system_prompt)]
 
-    # Load session history from memory
     try:
-        # Retrieve last 20 messages (reverse chronological, so we reverse it back)
-        past_entries = await memory.retrieve("", namespace="session", limit=20)
-        for entry in reversed(past_entries):
+        while True:
             try:
-                data = json.loads(entry.content)
-                messages.append(Message(role=data["role"], content=data["content"]))
-            except (json.JSONDecodeError, KeyError):
-                # Fallback for old simple text entries
-                messages.append(Message(role="user", content=entry.content))
-        if len(past_entries) > 0:
-            console.print(f"[dim]Loaded {len(past_entries)} messages from history.[/dim]\n")
-    except Exception:
-        pass
+                user_input = _read_input(console, draft_manager)
+            except EOFError:
+                break
+            except KeyboardInterrupt:
+                console.print("\n[yellow]Interrupted.[/yellow]")
+                break
 
-    renderer = ChatRenderer(console, model=model, provider=provider_name)
+            if not user_input.strip():
+                continue
 
-    try:
-        with renderer:
-            while True:
-                try:
-                    user_input = _read_input(console, draft_manager)
-                except (EOFError, KeyboardInterrupt):
-                    console.print("\n[dim]Goodbye.[/dim]")
+            # Handle slash commands
+            slash_result = await slash.dispatch(messages, user_input)
+            if slash_result:
+                if slash_result.messages is not None:
+                    messages = slash_result.messages
+                if slash_result.output:
+                    console.print(slash_result.output)
+                if slash_result.new_model:
+                    model = slash_result.new_model
+                if slash_result.done:
                     break
+                continue
 
-                stripped = user_input.strip()
-
-                # Interactive slash command selection
-                if stripped == "/":
-                    from rich.prompt import Prompt
-
-                    cmds = slash._commands
-                    unique_cmds = {}
-                    for c in cmds.values():
-                        unique_cmds[c.name] = c
-
-                    options = sorted(unique_cmds.keys())
-                    choices_str = ", ".join([f"[cyan]/{o}[/cyan]" for o in options])
-                    console.print(f"[dim]Available commands:[/dim] {choices_str}")
-
-                    cmd_name = Prompt.ask(
-                        "Select command",
-                        choices=options,
-                        show_choices=False,
-                    )
-                    user_input = f"/{cmd_name}"
-                    stripped = user_input
-                    renderer.add_user(user_input)
-
-                if stripped.lower() in ("exit", "quit", "/exit", "/quit"):
-                    console.print("[dim]Goodbye.[/dim]")
-                    break
-
-                if not stripped:
+            # Handle shell escape
+            if user_input.startswith("!"):
+                cmd = user_input[1:].strip()
+                if not cmd:
                     continue
-
-                # Add to readline history for arrow key support
-                readline.add_history(user_input)
-                with contextlib.suppress(OSError):
-                    readline.write_history_file(str(history_path))
-
-                # Dispatch slash commands before sending to the LLM
-                slash_result = await slash.dispatch(messages, stripped)
-                if slash_result is not None:
-                    if slash_result.messages is not None:
-                        messages = slash_result.messages
-                        # If messages were cleared (only system remains), clear renderer too
-                        if len(messages) <= 1:
-                            renderer.clear()
-                    if slash_result.output:
-                        console.print(slash_result.output)
-                    if slash_result.new_model:
-                        model = slash_result.new_model
-                        # Re-create provider if model or provider changed
-                        provider = ProviderRegistry.create(config.default_provider, config)
-                        ctx_mgr = ContextManager(provider, model=model)
-                        # Update renderer model reference
-                        renderer.model = model
-                    if slash_result.done:
-                        console.print("[dim]Goodbye.[/dim]")
-                        break
-                    renderer.print_status()
-                    console.print()
-                    continue
-
-                # Shell escape shortcut
-                if stripped.startswith("!"):
-                    cmd = stripped[1:].strip()
-                    if cmd:
-                        renderer.add_user(f"$ {cmd}")
-                        result = await tools.execute("shell", {"command": cmd})
-                        renderer.add_tool_result("shell", result.content, is_error=result.is_error)
-                        # Add to history so agent can see it if next message refers to it
-                        messages.append(Message(role="user", content=stripped))
-                        messages.append(
-                            Message(
-                                role="tool",
-                                content=result.content,
-                                tool_call_id="shell_escape",
-                                name="shell",
-                            )
-                        )
-                        renderer.print_status()
-                        console.print()
-                        continue
-                    else:
-                        console.print("[dim]Usage: !<command>[/dim]\n")
-                        continue
-
-                renderer.add_user(user_input)
-                messages.append(Message(role="user", content=user_input))
-                await memory.store(
-                    json.dumps({"role": "user", "content": user_input}),
-                    namespace="session",
+                console.print(f"[dim]Running: {cmd}[/dim]")
+                proc = await asyncio.create_subprocess_shell(
+                    cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
                 )
+                stdout, stderr = await proc.communicate()
+                out = stdout.decode().strip()
+                err = stderr.decode().strip()
+                combined = f"{out}\n{err}".strip()
+                if combined:
+                    console.print(combined)
+                    messages.append(Message(role="user", content=f"Output of `{cmd}`:\n{combined}"))
+                continue
 
-                # Auto-context compaction before LLM turn
-                with contextlib.suppress(Exception):
-                    messages = await ctx_mgr.prepare(
-                        messages, tools=tools.definitions()
-                    )
+            # Regular message
+            messages.append(Message(role="user", content=user_input))
+            
+            # Record history
+            with open(history_path, "a", encoding="utf-8") as f:
+                f.write(user_input.replace("\n", "\\n") + "\n")
 
-                try:
-                    # We need to capture the assistant's response to store it
-                    # The current _run_agent_turn appends directly to messages
-                    start_idx = len(messages)
-                    await _run_agent_turn(
-                        messages,
-                        provider,
-                        tools,
-                        model,
-                        config,
-                        streaming=streaming,
-                        renderer=renderer,
-                    )
-                    # Store all new assistant/tool messages
-                    for i in range(start_idx, len(messages)):
-                        msg = messages[i]
-                        if msg.content:
-                            await memory.store(
-                                json.dumps({"role": msg.role, "content": msg.content}),
-                                namespace="session",
-                            )
-                except Exception as e:
-                    renderer.add_tool_result("error", str(e), is_error=True)
-                renderer.print_status()
-                console.print()
+            # Run agent turn
+            await _run_agent_turn(
+                messages,
+                provider,
+                tools,
+                model,
+                config,
+                streaming=streaming,
+                renderer=renderer,
+            )
+
     finally:
         # Disconnect MCP clients
         for client in mcp_clients:
             await client.disconnect()
+        # Save history
+        with contextlib.suppress(OSError):
+            readline.write_history_file(str(history_path))
 
 
 @app.command()
 def chat(
     provider: str | None = typer.Option(None, "--provider", "-p", help="LLM provider to use."),
     model: str | None = typer.Option(None, "--model", "-m", help="Model ID to use."),
-    no_stream: bool = typer.Option(False, "--no-stream", help="Disable streaming."),
+    no_streaming: bool = typer.Option(False, "--no-streaming", help="Disable real-time streaming."),
 ) -> None:
-    """Start an interactive chat session with tool use."""
-    try:
-        asyncio.run(_chat_loop(provider, model, not no_stream))
-    except KeyboardInterrupt:
-        console.print("\n[dim]Interrupted.[/dim]")
+    """Start an interactive chat session with CarbonClaw."""
+    asyncio.run(_chat_loop(provider, model, not no_streaming))
