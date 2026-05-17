@@ -186,6 +186,9 @@ async def _execute_tools_with_approval(
                 approved = await cli_approval_callback(call.name, call.arguments)
 
         if approved:
+            if renderer:
+                renderer.add_tool_call(call.name, call.arguments)
+                
             result = await tools.execute(call.name, call.arguments)
             results.append(
                 Message(
@@ -252,7 +255,8 @@ async def _run_agent_turn(
                                     "name": tc.name or "",
                                     "arguments": "",
                                 }
-                                renderer.add_tool_call(tc.name or "tool")
+                                if renderer:
+                                    renderer.set_status(f"Calling {tc.name}...")
                             elif tc.arguments_delta:
                                 if current_tool is not None:
                                     current_tool["arguments"] += tc.arguments_delta

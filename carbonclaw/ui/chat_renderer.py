@@ -150,11 +150,17 @@ class ChatRenderer:
     def resume(self) -> None:
         """Resume the streaming display if we were in the middle of a message."""
         if self.messages and self.messages[-1].role == "assistant" and self.messages[-1].streaming:
-            self._stream_display = StreamingDisplay(self.console, title="CarbonClaw")
+            self._stream_display = StreamingDisplay(self.console, title=" CarbonClaw ")
             self._stream_display.__enter__()
             self._stream_display.set_text(self._current_stream)
 
+    def set_status(self, text: str) -> None:
+        """Update the status of the current stream display."""
+        if self._stream_display:
+            self._stream_display.set_status(text)
+
     def end_assistant(self) -> None:
+
         """Finalize the current assistant streaming message."""
         if self.messages and self.messages[-1].role == "assistant":
             self.messages[-1].streaming = False
@@ -164,8 +170,23 @@ class ChatRenderer:
             self._stream_display.__exit__(None, None, None)
             self._stream_display = None
 
-    def add_tool_call(self, name: str) -> None:
-        """Show a tool call indicator."""
+    def _get_tool_info(self, name: str) -> tuple[str, str]:
+        """Get icon and color for a tool."""
+        info = {
+            "shell": ("🐚", "bold cyan"),
+            "file_write": ("📝", "bold green"),
+            "file_patch": ("🔧", "bold green"),
+            "file_read": ("📖", "bold blue"),
+            "browser": ("🌐", "bold magenta"),
+            "git": ("🌿", "bold yellow"),
+            "web_search": ("🔍", "bold blue"),
+            "planner": ("📋", "bold white"),
+        }
+        return info.get(name, ("🛠️", "bold white"))
+
+    def add_tool_call(self, name: str, arguments: dict[str, Any] | None = None) -> None:
+        """Show a tool call indicator with optional arguments."""
+        icon, style = self._get_tool_info(name)
         self.messages.append(
             RenderedMessage(
                 role="tool",
@@ -173,9 +194,33 @@ class ChatRenderer:
                 tool_name=name,
             )
         )
+        
+        title = f" {icon} {name} "
+        width = min(self.console.width - 2, 100)
+        
+        arg_str = ""
+        if arguments:
+            import json
+            # Show a compact preview of arguments
+            filtered = {k: v for k, v in arguments.items() if len(str(v)) < 100}
+            if filtered:
+                arg_str = "\n" + Text(json.dumps(filtered, indent=2), style="dim").markup
+        
+        self.console.print(
+            Panel(
+                Text.from_markup(f"[{style}]Running...[/{style}]{arg_str}"),
+                border_style="dim",
+                title=title,
+                title_align="center",
+                padding=(0, 2),
+                width=width,
+            )
+        )
 
     def add_tool_result(self, name: str, result: str, is_error: bool = False) -> None:
         """Update or add a tool result and print it."""
+        icon, _ = self._get_tool_info(name)
+        
         for msg in reversed(self.messages):
             if (
                 msg.role == "tool"
@@ -195,17 +240,20 @@ class ChatRenderer:
                 )
             )
 
-        title = f" {name} "
+        title = f" {icon} {name} "
         if is_error:
-            title = f" [bold red]{name}[/bold red] "
-        display = result[:2000]
-        if len(result) > 2000:
+            title = f" ❌ {name} "
+        
+        display = result[:3000]
+        if len(result) > 3000:
             display += (
-                f"\n\n[dim]... {len(result) - 2000} more characters[/dim]"
+                f"\n\n[dim]... {len(result) - 3000} more characters[/dim]"
             )
+        
         style = self.ERROR_COLOR if is_error else self.SYSTEM_COLOR
         border = "red" if is_error else "dim"
         width = min(self.console.width - 2, 100)
+        
         self.console.print(
             Panel(
                 Text(display, style=style),

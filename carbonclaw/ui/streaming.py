@@ -45,6 +45,12 @@ class StreamingDisplay:
         if self._live:
             self._live.__exit__(*args)
 
+    def set_status(self, text: str) -> None:
+        """Update the status text of the spinner."""
+        self._spinner.text = text
+        if self._live:
+            self._live.update(self._render())
+
     def _render(self) -> Panel:
         content = Markdown(self._text, code_theme="monokai") if self._text else self._spinner
         width = min(self.console.width - 2, 100)
