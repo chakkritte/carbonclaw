@@ -407,7 +407,7 @@ async def _chat_loop(
     slash = SlashRegistry()
     ctx_mgr = ContextManager(provider, model=model)
 
-    renderer = ChatRenderer(console)
+    renderer = ChatRenderer(console, model=model, provider=provider_name)
     print_banner(console)
     console.print(f"Chatting with [bold green]{provider_name}/{model}[/bold green]")
     console.print("[dim]Type /help for commands, !command for shell, or Ctrl+C to exit.[/dim]\n")
@@ -480,9 +480,12 @@ async def _chat_loop(
             )
 
     finally:
-        # Disconnect MCP clients
-        for client in mcp_clients:
-            await client.disconnect()
+        # Disconnect MCP clients safely
+        if mcp_clients:
+            await asyncio.gather(
+                *(client.disconnect() for client in mcp_clients),
+                return_exceptions=True
+            )
         # Save history
         with contextlib.suppress(OSError):
             readline.write_history_file(str(history_path))
