@@ -408,7 +408,27 @@ async def _chat_loop(
     ctx_mgr = ContextManager(provider, model=model)
 
     renderer = ChatRenderer(console, model=model, provider=provider_name)
-    print_banner(console)
+    
+    # Determine endpoint and locality
+    prov_config = config.get_provider_config(provider_name)
+    endpoint = prov_config.base_url or "https://api.anthropic.com" # Default example
+    if provider_name.lower() == "openai":
+        endpoint = prov_config.base_url or "https://api.openai.com/v1"
+    elif provider_name.lower() == "gemini":
+        endpoint = "https://generativelanguage.googleapis.com"
+    elif provider_name.lower() == "ollama":
+        endpoint = prov_config.base_url or "http://localhost:11434"
+    
+    is_local = provider_name.lower() in ("ollama", "local", "llama.cpp")
+
+    print_banner(
+        console,
+        provider=provider_name.capitalize(),
+        model=model,
+        endpoint=endpoint,
+        is_local=is_local
+    )
+    
     console.print(f"Chatting with [bold green]{provider_name}/{model}[/bold green]")
     console.print("[dim]Type /help for commands, !command for shell, or Ctrl+C to exit.[/dim]\n")
 
