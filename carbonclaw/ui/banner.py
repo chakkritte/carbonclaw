@@ -9,12 +9,12 @@ from rich.text import Text
 from carbonclaw import __version__
 
 BANNER_LINES = [
-    ("  ███████╗███████╗███╗   ██╗ █████╗  ", "bold green"),
-    ("  ██╔════╝██╔════╝████╗  ██║██╔══██╗ ", "bold green"),
-    ("  ███████╗█████╗  ██╔██╗ ██║███████║ ", "bold green"),
-    ("  ╚════██║██╔══╝  ██║╚██╗██║██╔══██║ ", "bold green"),
-    ("  ███████║███████╗██║ ╚████║██║  ██║ ", "bold green"),
-    ("  ╚══════╝╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝ ", "bold green"),
+    ("  ██████╗ █████╗ ██████╗ ██████╗  ██████╗ ███╗   ██╗ ██████╗██╗      █████╗ ██╗    ██╗", "bold green"),
+    (" ██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔═══██╗████╗  ██║██╔════╝██║     ██╔══██╗██║    ██║", "bold green"),
+    (" ██║     ███████║██████╔╝██████╔╝██║   ██║██╔██╗ ██║██║     ██║     ███████║██║ █╗ ██║", "bold green"),
+    (" ██║     ██╔══██║██╔══██╗██╔══██╗██║   ██║██║╚██╗██║██║     ██║     ██╔══██║██║███╗██║", "bold green"),
+    (" ╚██████╗██║  ██║██║  ██║██████╔╝╚██████╔╝██║ ╚████║╚██████╗███████╗██║  ██║╚███╔███╔╝", "bold green"),
+    ("  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝ ", "bold green"),
 ]
 
 
@@ -23,5 +23,5 @@ def print_banner(console: Console) -> None:
     banner = Text()
     for line, style in BANNER_LINES:
         banner.append(line + "\n", style=style)
-    banner.append(f"\n           v{__version__}", style="dim")
+    banner.append(f"\n                                         v{__version__}", style="dim")
     console.print(Panel(banner, border_style="green", padding=(1, 2)))
