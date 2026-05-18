@@ -2,6 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-c4715a.svg)](https://opensource.org/licenses/MIT) [![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python)](https://www.python.org) [![GitHub Repo Size](https://img.shields.io/github/repo-size/chakkritte/carbonclaw?color=c4715a)](https://github.com/chakkritte/carbonclaw) [![GitHub Issues](https://img.shields.io/github/issues/chakkritte/carbonclaw?color=c4715a)](https://github.com/chakkritte/carbonclaw/issues)
 
+<p align="center">
+  <img src="images/carbonclaw-logo.png" alt="CarbonClaw Logo" width="250"/>
+</p>
 
 CarbonClaw is a **Sustainability-Focused, Local-First, and Privacy-First** AI agent runtime for autonomous software engineering and self-evolving workflows.
 
