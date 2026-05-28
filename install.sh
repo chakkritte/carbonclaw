@@ -48,5 +48,5 @@ uv run playwright install chromium
 # 5. Done
 echo ""
 echo "✅ CarbonClaw installed successfully!"
-echo "🚀 Run 'uv run carbonclaw chat' to start."
+echo "🚀 Run 'carbonclaw chat' to start."
 
