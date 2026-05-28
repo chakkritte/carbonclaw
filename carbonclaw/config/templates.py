@@ -16,7 +16,7 @@ class AgentTemplate(BaseModel):
     name: str
     description: str
     default_provider: str = "ollama"
-    default_model: str = "llama3.2"
+    default_model: str = "gemma4:e2b"
     routing_strategy: str = "sustainability"
     temperature: float = 0.7
     tools: list[str] = Field(default_factory=list)
@@ -66,7 +66,7 @@ class TemplateManager:
                 name="sustainability-swarm",
                 description="Lightweight research/coding swarm using zero-carbon local models.",
                 default_provider="ollama",
-                default_model="llama3.2",
+                default_model="gemma4:e2b",
                 routing_strategy="sustainability",
                 tools=["file_read", "file_write", "git"],
                 system_prompt="You are a green-focused coder. Write code with minimal iterations.",

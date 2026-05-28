@@ -63,7 +63,7 @@ def init_carbonclaw() -> None:
 
     config_data["default_model"] = Prompt.ask(
         "Default Model ID",
-        default="llama3.2" if provider == "ollama" else "gpt-4o-mini",
+        default="gemma4:e2b" if provider == "ollama" else "gpt-4o-mini",
     )
 
     # --- 2. Sustainability & Runtime ---

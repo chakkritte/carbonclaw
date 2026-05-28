@@ -31,7 +31,7 @@ class OllamaProvider(BaseProvider):
     def __init__(
         self,
         base_url: str = "http://localhost:11434",
-        default_model: str = "llama3.2",
+        default_model: str = "gemma4:e2b",
     ) -> None:
         super().__init__({
             "base_url": base_url,

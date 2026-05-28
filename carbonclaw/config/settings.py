@@ -131,7 +131,7 @@ class CarbonClawConfig(BaseSettings):
 
     # General
     default_provider: str = "ollama"
-    default_model: str = "llama3.2"
+    default_model: str = "gemma4:e2b"
     api_key: str | None = None
     base_url: str | None = None
     temperature: float = 0.7
