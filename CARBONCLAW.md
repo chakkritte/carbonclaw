@@ -104,6 +104,11 @@ carbonclaw models
 | `carbonclaw schedule-daemon` | **Scheduler Daemon** | Runs a background daemon process that continuously polls and executes due tasks. |
 | `carbonclaw playback <session_id>` | **Session Playback** | Steps through the recorded reasoning, duration, and emissions of an agent session. |
 | `carbonclaw playback-list` | **List Sessions** | Displays all uniquely tracked historical agent sessions in a telemetry table. |
+| `carbonclaw template-list` | **List Templates** | Lists all locally installed agent configuration templates. |
+| `carbonclaw template-pull <name>` | **Pull Template** | Downloads and installs a specialized agent configuration template from the marketplace. |
+| `carbonclaw template-publish <name>` | **Publish Template** | Registers your custom agent configuration template to the marketplace. |
+| `carbonclaw doc-sync` | **Document Sync** | Audits modified files and auto-generates/injects missing Python docstrings via AST parsing. |
+
 
 ## 🔮 Roadmap & Future Work
 CarbonClaw is continually evolving. Key upcoming phases include:

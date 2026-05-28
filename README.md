@@ -85,14 +85,15 @@ For detailed guides, architecture, and advanced usage, see [CLAUDE.md](./CLAUDE.
 ## 📅 Roadmap (Next 1-3 Months)
 
 ### Month 1: IDE Integration & Swarm Expansion
-- [ ] **Language Server Protocol (LSP)**: Launch `carbonclaw lsp` to provide autonomous background refactoring and inline architecture explanations directly inside VSCode and Neovim.
+- [x] **IDE / Extension Integration**: Launch extension API backend endpoints to provide inline sustainability badges and execution security gates directly inside editors.
 - [ ] **Multi-Agent Debate UI**: Add a rich, interactive TUI for viewing Swarm Debates in real-time, allowing humans to interject and vote on agent proposals.
 - [ ] **Playwright Visual Testing**: Agents can write and execute visual regression tests using the integrated `VisionTool`.
 
 ### Month 2: Proactive Automation & CI/CD
-- [ ] **Event-Driven Workflows**: Connect CarbonClaw to GitHub Webhooks to autonomously review PRs, flag security issues, and suggest architectural improvements before merge.
-- [ ] **Daemon Mode (Advanced `/heal`)**: Expand the self-healing CI to run as a persistent background service that monitors local file changes and auto-fixes lint/type errors on save.
+- [x] **Event-Driven Workflows**: Connect CarbonClaw to GitHub/GitLab Webhooks to autonomously heal CI build pipelines, creating and verifying automated branch fixes.
+- [x] **Self-Documenting Code**: Launch `doc-sync` AST auditing daemon to continuously audit modified files and inject missing docstrings in real-time.
 - [ ] **Automated Benchmark Dashboard**: A hosted dashboard comparing the carbon efficiency of open-source models based on CarbonClaw's anonymous telemetry data.
+
 
 ### Month 3: Deep Repo Awareness & Ecosystem
 - [ ] **Advanced Graph Memory Expansion**: Connect the AST Knowledge Graph to Git history (blame, churn) to predict which files are most likely to introduce bugs during a refactor.
