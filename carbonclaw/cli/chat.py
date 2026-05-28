@@ -4,7 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import readline
+try:
+    import readline
+except ImportError:
+    # Safe fallback/mock for Windows if readline/pyreadline3 is missing
+    class MockReadline:
+        def set_completer(self, completer: Any) -> None: pass
+        def parse_and_bind(self, string: str) -> None: pass
+        def insert_text(self, string: str) -> None: pass
+        def set_startup_hook(self, hook: Any = None) -> None: pass
+        def read_history_file(self, path: str) -> None: pass
+        def write_history_file(self, path: str) -> None: pass
+    readline = MockReadline()
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
