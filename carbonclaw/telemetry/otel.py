@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 from carbonclaw import __version__
 import os
+import platform
 
 _TRACER_NAME = "carbonclaw"
 
@@ -28,7 +29,7 @@ def setup_telemetry(config: CarbonClawConfig) -> None:
             "service.name": "carbonclaw",
             "service.version": __version__,
             "deployment.environment": os.environ.get("CARBONCLAW_ENV", "production"),
-            "host.name": os.uname().nodename,
+            "host.name": platform.node(),
         }
     )
 
