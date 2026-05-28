@@ -198,3 +198,24 @@ async def test_cmd_risk_slash(tmp_path) -> None:
         result = await registry.dispatch([], f"/risk {test_file}")
         assert result is not None
         assert result.output is not None
+
+
+@pytest.mark.asyncio
+async def test_cmd_context_slash() -> None:
+    """/context slash command performs context analysis and outputs visual grid correctly."""
+    from carbonclaw.cli.slash import _cmd_context, SlashRegistry
+    messages = [
+        Message(role="system", content="You are CarbonClaw."),
+        Message(role="user", content="Hello!"),
+        Message(role="assistant", content="Hello, how can I help you today?")
+    ]
+    registry = SlashRegistry()
+    result = await _cmd_context(messages, "", registry)
+    assert result is not None
+    assert "Context Usage" in result.output
+    assert "User messages" in result.output
+    assert "Agent responses" in result.output
+    assert "System prompt" in result.output
+    assert "Checkpoints" in result.output
+    assert "System files" in result.output
+
