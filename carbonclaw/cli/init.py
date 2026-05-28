@@ -44,7 +44,7 @@ def init_carbonclaw() -> None:
     
     provider = Prompt.ask(
         "Default LLM Provider",
-        choices=["ollama", "openai", "anthropic", "gemini", "deepseek", "openrouter"],
+        choices=["ollama", "openai", "anthropic", "gemini", "deepseek", "openrouter", "llamacpp"],
         default="ollama",
     )
     
@@ -52,18 +52,21 @@ def init_carbonclaw() -> None:
         "default_provider": provider,
     }
 
-    if provider != "ollama":
+    if provider not in ("ollama", "llamacpp"):
         api_key = Prompt.ask(f"Enter your {provider.upper()} API Key", password=True)
         if api_key:
             # We'll store it in the provider-specific block
             config_data[provider] = {"api_key": api_key}
-    else:
+    elif provider == "ollama":
         base_url = Prompt.ask("Ollama Base URL", default="http://localhost:11434")
         config_data["ollama"] = {"base_url": base_url}
+    elif provider == "llamacpp":
+        model_path = Prompt.ask("Local GGUF Model Filename", default="Llama-3.2-1B-Instruct-Q4_K_M.gguf")
+        config_data["llamacpp"] = {"base_url": model_path}
 
     config_data["default_model"] = Prompt.ask(
         "Default Model ID",
-        default="gemma4:e2b" if provider == "ollama" else "gpt-4o-mini",
+        default="gemma4:e2b" if provider == "ollama" else ("Llama-3.2-1B-Instruct-Q4_K_M" if provider == "llamacpp" else "gpt-4o-mini"),
     )
 
     # --- 2. Sustainability & Runtime ---

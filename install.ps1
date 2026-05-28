@@ -86,8 +86,22 @@ if (-not $?) {
     Write-Host "  2. Manually delete the '.venv' directory by running:" -ForegroundColor White
     Write-Host "     Remove-Item -Recurse -Force .venv" -ForegroundColor Yellow
     Write-Host "  3. Re-run this installer script." -ForegroundColor White
-    return
 }
+
+# 3.0.5 Install llama-cpp-python with CUDA/CPU auto-detection
+$hasCuda = $false
+if (Get-Command nvidia-smi -ErrorAction SilentlyContinue) {
+    $hasCuda = $true
+}
+if ($hasCuda) {
+    Write-Host "🔥 CUDA detected! Installing llama-cpp-python with GPU (CUDA) acceleration..." -ForegroundColor Green
+    $env:CMAKE_ARGS = "-DGGML_CUDA=on"
+    uv pip install llama-cpp-python --no-cache --no-binary llama-cpp-python
+} else {
+    Write-Host "💻 No CUDA detected. Installing llama-cpp-python (CPU only)..." -ForegroundColor Yellow
+    uv pip install llama-cpp-python
+}
+
 
 # 3.1 Install globally (optional but recommended for global path access)
 Write-Host "🌍 Installing 'carbonclaw' command globally..." -ForegroundColor Cyan

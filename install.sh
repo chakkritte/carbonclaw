@@ -52,6 +52,15 @@ fi
 echo "📦 Syncing dependencies (this may take a minute or two)..."
 uv sync --all-extras
 
+# 3.0.5 Install llama-cpp-python with CUDA/CPU auto-detection
+if command -v nvidia-smi &> /dev/null; then
+    echo "🔥 CUDA detected! Installing llama-cpp-python with GPU (CUDA) acceleration..."
+    CMAKE_ARGS="-DGGML_CUDA=on" uv pip install llama-cpp-python --no-cache --no-binary llama-cpp-python
+else
+    echo "💻 No CUDA detected. Installing llama-cpp-python (CPU only)..."
+    uv pip install llama-cpp-python
+fi
+
 # 3.1 Install globally (optional but recommended for global path access)
 echo "🌍 Installing 'carbonclaw' command globally..."
 uv tool install . --force
