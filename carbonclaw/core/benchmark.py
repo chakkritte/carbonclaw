@@ -25,12 +25,32 @@ class Benchmarker:
         if not self.config.carbon_tracking_enabled:
             return
 
-        # Simple heuristic for an alternative cheaper model
         alt_provider = "ollama"
-        alt_model = "llama3.2:1b"  # extremely small and efficient
+        alt_model = "llama3.2:1b"
         
         try:
             provider = ProviderRegistry.create(alt_provider, self.config)
+            
+            # Dynamically discover available models on the local Ollama instance
+            try:
+                available_models = await provider.list_models()
+                if available_models:
+                    # Prefer llama3.2:1b or any 1b/3b/8b llama3/llama3.2 model, or qwen if present
+                    preferred_models = ["llama3.2:1b", "llama3.2", "llama3.1", "llama3", "qwen", "phi"]
+                    selected_model = None
+                    for pref in preferred_models:
+                        for m in available_models:
+                            if pref in m.lower():
+                                selected_model = m
+                                break
+                        if selected_model:
+                            break
+                    if selected_model:
+                        alt_model = selected_model
+                    else:
+                        alt_model = available_models[0]
+            except Exception:
+                pass
             
             from carbonclaw.core.models import CompletionRequest
             request = CompletionRequest(
