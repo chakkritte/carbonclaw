@@ -587,7 +587,7 @@ async def _chat_loop(
                 cmd = user_input[1:].strip()
                 if not cmd:
                     continue
-                console.print(f"[dim]Running: {cmd}[/dim]")
+                console.print(f"[bold green]●[/bold green] [grey50]Running: {cmd}[/grey50]")
                 proc = await asyncio.create_subprocess_shell(
                     cmd,
                     stdout=asyncio.subprocess.PIPE,

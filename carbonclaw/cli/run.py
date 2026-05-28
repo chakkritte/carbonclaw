@@ -64,7 +64,7 @@ def run(
         )
 
         try:
-            console.print(f"[bold green]Running:[/bold green] {task}\n")
+            console.print(f"[bold green]●[/bold green] [grey50]Running:[/grey50] {task}\n")
             async for text in agent.stream_run(task):
                 console.print(text, end="")
             console.print()
