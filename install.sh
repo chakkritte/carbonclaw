@@ -9,6 +9,8 @@ echo "🤖 Installing CarbonClaw..."
 # 1. Determine if we are already inside the CarbonClaw repository root
 if [ -f "pyproject.toml" ] && grep -q 'name = "carbonclaw"' pyproject.toml 2>/dev/null; then
     echo "🌿 Detected CarbonClaw repository root. Skipping clone."
+    echo "🧹 Cleaning local repository..."
+    git restore . 2>/dev/null || true
 else
     # Clone or enter directory
     if [ ! -d "carbonclaw" ]; then
@@ -22,6 +24,8 @@ else
         if [ ! -f "pyproject.toml" ] && [ -f "../pyproject.toml" ]; then
             cd ..
         fi
+        echo "🧹 Cleaning local repository..."
+        git restore . 2>/dev/null || true
         echo "🔄 Updating repository..."
         git pull origin main || echo "⚠️ Git pull failed. Continuing with local codebase..."
     fi

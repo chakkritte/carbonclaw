@@ -9,6 +9,8 @@ if (Test-Path "pyproject.toml") {
     $content = Get-Content "pyproject.toml" -Raw
     if ($content -match 'name = "carbonclaw"') {
         Write-Host "🌿 Detected CarbonClaw repository root. Skipping clone." -ForegroundColor Green
+        Write-Host "🧹 Cleaning local repository..." -ForegroundColor Cyan
+        git restore .
         $isRepoRoot = $true
     }
 }
@@ -29,6 +31,8 @@ if (-not $isRepoRoot) {
         if (-not (Test-Path "pyproject.toml") -and (Test-Path "..\pyproject.toml")) {
             Set-Location ..
         }
+        Write-Host "🧹 Cleaning local repository..." -ForegroundColor Cyan
+        git restore .
         Write-Host "🔄 Updating repository..." -ForegroundColor Cyan
         git pull origin main
         if (-not $?) {
