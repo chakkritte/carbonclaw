@@ -23,6 +23,9 @@ irm https://raw.githubusercontent.com/chakkritte/carbonclaw/main/install.ps1 | i
 ```
 *Requires Python 3.12+ and Git (uv will be auto-installed if missing).*
 
+> [!TIP]
+> **Windows Installation Troubleshooting:** If the installation fails with `Access is denied (os error 5)` during `uv sync`, it means an open editor (like VS Code, PyCharm) or python terminal is locking the `.venv` folder. Close your editors/terminals, run `Remove-Item -Recurse -Force .venv` inside the repository, and run the installer again.
+
 ## 🌟 Key Features
 
 - **Self-Healing CI**: Autonomous daemon mode (`/heal`) that watches for test failures and automatically creates and verifies fixes.
