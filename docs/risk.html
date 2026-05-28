@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Routing | CarbonClaw Documentation</title>
+    <title>Refactoring Risk Analysis | CarbonClaw</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -18,9 +18,7 @@
             --surface: #161b22;
             --sidebar-width: 260px;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg);
@@ -28,7 +26,6 @@
             line-height: 1.6;
             display: flex;
         }
-
         aside {
             width: var(--sidebar-width);
             height: 100vh;
@@ -37,7 +34,6 @@
             position: fixed;
             background: var(--bg);
         }
-
         .sidebar-logo {
             font-weight: 800;
             font-size: 1.25rem;
@@ -46,24 +42,37 @@
             text-decoration: none;
             color: var(--fg);
         }
-
-        .nav-group { margin-bottom: 2rem; }
-        .nav-group h4 { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; letter-spacing: 0.05em; }
-        .nav-link { display: block; color: var(--muted); text-decoration: none; font-size: 0.9rem; margin-bottom: 0.75rem; transition: color 0.2s; }
-        .nav-link:hover, .nav-link.active { color: var(--accent-light); }
-
+        .nav-group {
+            margin-bottom: 2rem;
+        }
+        .nav-group h4 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 1rem;
+            letter-spacing: 0.05em;
+        }
+        .nav-link {
+            display: block;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+            transition: color 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-light);
+        }
         main {
             margin-left: var(--sidebar-width);
             padding: 4rem;
             max-width: 1000px;
             width: 100%;
         }
-
         h1 { font-size: 2.5rem; margin-bottom: 1rem; }
         h2 { font-size: 1.75rem; margin-top: 3rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
         h3 { font-size: 1.25rem; margin-top: 2rem; margin-bottom: 1rem; }
         p { margin-bottom: 1.5rem; color: var(--fg); opacity: 0.9; }
-
         code {
             font-family: 'JetBrains Mono', monospace;
             background: var(--surface);
@@ -71,7 +80,6 @@
             border-radius: 4px;
             font-size: 0.9em;
         }
-
         pre {
             background: var(--surface);
             padding: 1.5rem;
@@ -80,9 +88,7 @@
             margin-bottom: 1.5rem;
             border: 1px solid var(--border);
         }
-
         pre code { background: none; padding: 0; }
-
         .info-box {
             background: rgba(35, 134, 54, 0.1);
             border-left: 4px solid var(--accent);
@@ -90,7 +96,6 @@
             margin: 2rem 0;
             border-radius: 0 8px 8px 0;
         }
-
         footer {
             margin-top: 4rem;
             padding-top: 2rem;
@@ -98,7 +103,6 @@
             color: var(--muted);
             font-size: 0.8rem;
         }
-
         @media (max-width: 768px) {
             aside { display: none; }
             main { margin-left: 0; padding: 2rem; }
@@ -108,60 +112,49 @@
 <body>
     <aside>
         <a href="../index.html" class="sidebar-logo">🤖 CarbonClaw</a>
-        
         <div class="nav-group">
             <h4>Getting Started</h4>
             <a href="index.html" class="nav-link">Overview</a>
             <a href="https://github.com/chakkritte/carbonclaw#quick-start" class="nav-link">Installation</a>
         </div>
-
         <div class="nav-group">
             <h4>Core Features</h4>
-            <a href="routing.html" class="nav-link active">Smart Routing</a>
+            <a href="routing.html" class="nav-link">Smart Routing</a>
             <a href="research.html" class="nav-link">Advanced Research</a>
             <a href="slides.html" class="nav-link">Slide Generation</a>
-            <a href="risk.html" class="nav-link">Refactoring Risk</a>
+            <a href="risk.html" class="nav-link active">Refactoring Risk</a>
         </div>
-
         <div class="nav-group">
             <h4>Sustainability</h4>
             <a href="sustainability.html" class="nav-link">Carbon Tracking</a>
         </div>
     </aside>
-
     <main>
-        <h1>Smart Task Routing</h1>
-        <p>CarbonClaw's Smart Router dynamically selects the most appropriate AI model based on task type and complexity.</p>
+        <h1>AST &amp; Git-Aware Refactoring Risk</h1>
+        <p>Predict refactoring risk and downstream blast radius prior to modifying code using a blended heuristic of Git churn and AST parsing.</p>
+        
+        <h2>How Risk Calculation Works</h2>
+        <p>CarbonClaw's risk analysis module evaluates codebases at both a structural (AST) and historical (Git metadata) level to construct a reliable index of modification hazards.</p>
+        
+        <pre><code>Base Risk = (Commits * 1.2) + (Authors * 2.5) + (Net Churn * 0.02)
+Complexity Factor = 1 + ((Classes + Functions) / 10.0)
+Risk Score = Min(100.0, Base Risk * Complexity Factor)</code></pre>
 
-        <h2>How it Works</h2>
-        <p>When you provide a prompt, CarbonClaw performs three steps to decide where to route the request:</p>
-        <ol>
-            <li><strong>Task Classification</strong>: Keywords in your prompt are matched against categories (Coding, Research, Slides, General).</li>
-            <li><strong>Complexity Estimation</strong>: Prompt length and structural indicators are analyzed to assign a complexity score (0.0 to 1.0).</li>
-            <li><strong>Provider Selection</strong>: Based on your strategy (Sustainability, Latency, or Balanced), the router picks a local or cloud provider.</li>
-        </ol>
-
-        <h2>Routing Strategies</h2>
-        <p>You can switch strategies using the <code>/strategy</code> slash command:</p>
+        <h2>Heuristic Dimensions</h2>
         <ul>
-            <li><code>/strategy sustainability</code> (Default): Prioritizes local models (Ollama) for simple to medium tasks to minimize carbon footprint.</li>
-            <li><code>/strategy latency</code>: Selects the fastest responding provider based on real-time performance metrics.</li>
-            <li><code>/strategy balanced</code>: A mix of cost, speed, and quality factors.</li>
+            <li><strong>Git Commits Frequency</strong>: High code churn directly increases regression probability.</li>
+            <li><strong>Git Authors Density</strong>: Higher contributor counts on a single asset correlate with divergent architectural designs.</li>
+            <li><strong>AST Complexity</strong>: Scales risk upward proportionally to the density of class definitions, method scopes, and function boundaries.</li>
         </ul>
 
-        <h2>Task-Specific Models</h2>
-        <p>You can pin specific models to task types in your <code>pyproject.toml</code>:</p>
-        <pre><code>[tool.carbonclaw.routing]
-coding = "qwen2.5-coder:32b"
-research = "qwen2.5:32b"
-slides = "qwen2.5-coder:32b"
-general = "llama3.2:3b"
-fallback = "llama3.1:8b"</code></pre>
-
-        <div class="info-box">
-            <strong>Adaptive Learning</strong>
-            <p>CarbonClaw learns from every turn. It tracks average latency and error rates using Exponential Moving Average (EMA) to avoid unhealthy providers automatically.</p>
-        </div>
+        <h2>CLI &amp; Chat Usage</h2>
+        <h3>From Terminal Command Line</h3>
+        <p>Evaluate a specific source file using the CLI tool:</p>
+        <pre><code>carbonclaw risk path/to/module.py</code></pre>
+        
+        <h3>From Chat Sessions</h3>
+        <p>Evaluate code risk interactively from the CarbonClaw console or TUI:</p>
+        <pre><code>/risk path/to/module.py</code></pre>
 
         <footer>
             &copy; 2026 CarbonClaw Contributors. Released under MIT License.
