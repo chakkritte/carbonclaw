@@ -92,9 +92,15 @@ if (-not $?) {
 $hasCuda = $false
 if (Get-Command nvidia-smi -ErrorAction SilentlyContinue) {
     if (Get-Command nvcc -ErrorAction SilentlyContinue) {
-        $hasCuda = $true
+        try {
+            $null = & nvcc --version
+            $hasCuda = $true
+        } catch {
+            Write-Host "⚠️ CUDA GPU detected, but the CUDA compiler 'nvcc' failed to execute." -ForegroundColor Yellow
+            Write-Host "⚠️ Falling back to CPU-only installation for llama.cpp." -ForegroundColor Yellow
+        }
     } else {
-        Write-Host "⚠️ CUDA GPU detected via nvidia-smi, but the CUDA compiler 'nvcc' was not found in PATH." -ForegroundColor Yellow
+        Write-Host "⚠️ CUDA GPU detected via nvidia-smi, but the CUDA compiler 'nvcc' is not installed or is non-functional." -ForegroundColor Yellow
         Write-Host "⚠️ Falling back to CPU-only installation for llama.cpp." -ForegroundColor Yellow
         Write-Host "💡 Tip: To enable GPU acceleration, install the CUDA Toolkit for Windows." -ForegroundColor Yellow
     }

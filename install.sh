@@ -55,10 +55,10 @@ uv sync --all-extras
 # 3.0.5 Install llama-cpp-python with CUDA/CPU auto-detection
 HAS_CUDA=false
 if command -v nvidia-smi &> /dev/null; then
-    if command -v nvcc &> /dev/null; then
+    if nvcc --version &> /dev/null; then
         HAS_CUDA=true
     else
-        echo "⚠️ CUDA GPU detected via nvidia-smi, but the CUDA compiler 'nvcc' was not found in PATH."
+        echo "⚠️ CUDA GPU detected via nvidia-smi, but the CUDA compiler 'nvcc' is not installed or is non-functional."
         echo "⚠️ Falling back to CPU-only installation for llama.cpp."
         echo "💡 Tip: To enable GPU acceleration, install the CUDA Toolkit: sudo apt install nvidia-cuda-toolkit"
     fi
